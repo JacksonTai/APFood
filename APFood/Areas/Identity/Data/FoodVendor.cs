@@ -9,6 +9,5 @@ public class FoodVendor : APFoodUser
     [Required]
     public required string storeName { get; set; }
 
-
 }
 

@@ -1,7 +1,9 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Data;
 using APFood.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace APFood.Controllers
 {
@@ -13,13 +15,15 @@ namespace APFood.Controllers
         private readonly IUserEmailStore<APFoodUser> _emailStore;
         private readonly SignInManager<APFoodUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly APFoodContext _context;
 
         public RegisterController(
             UserManager<APFoodUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IUserStore<APFoodUser> userStore,
             SignInManager<APFoodUser> signInManager,
-            IConfiguration configuration
+            IConfiguration configuration,
+            APFoodContext context
           )
         {
             _userManager = userManager;
@@ -28,12 +32,13 @@ namespace APFood.Controllers
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _configuration = configuration;
+            _context = context;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Customer(RegistrationModel RegistrationModel)
+        public async Task<IActionResult> Customer(RegistrationModel registrationModel)
         {
-            return await RegisterUser(RegistrationModel, "Customer");
+            return await RegisterUser(registrationModel, "Customer");
         }
 
         [HttpPost]
@@ -43,9 +48,9 @@ namespace APFood.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> FoodVendor(RegistrationModel registrationModel)
+        public async Task<IActionResult> FoodVendor(FoodVendorRegistrationModel foodVendorRegistrationModel)
         {
-            return await RegisterUser(registrationModel, "Food Vendor");
+            return await RegisterUser(foodVendorRegistrationModel, "Food Vendor");
         }
 
         [HttpGet]
@@ -95,10 +100,17 @@ namespace APFood.Controllers
                 return IdentityResult.Failed(new IdentityError { Description = "Email already in use." });
             }
 
-            var user = CreateUser();
-            if (user == null)
+            APFoodUser user;
+            if (role == "Food Vendor" && registrationModel is FoodVendorRegistrationModel foodVendorModel)
             {
-                return IdentityResult.Failed(new IdentityError { Description = "User creation failed." });
+                user = new FoodVendor
+                {
+                    storeName = foodVendorModel.storeName
+                };
+            }
+            else
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "Invalid user role specified." });
             }
 
             await _userStore.SetUserNameAsync(user, registrationModel.Email, CancellationToken.None);
@@ -123,19 +135,6 @@ namespace APFood.Controllers
             return IdentityResult.Success;
         }
 
-        private APFoodUser CreateUser()
-        {
-            try
-            {
-                return Activator.CreateInstance<APFoodUser>();
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(APFoodUser)}'. " +
-                    $"Ensure that '{nameof(APFoodUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
-            }
-        }
 
         private IUserEmailStore<APFoodUser> GetEmailStore()
         {
