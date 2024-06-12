@@ -1,4 +1,4 @@
-﻿@model RegistrationModel
+﻿@model CustomerRegistrationModel
 @{
     ViewData["Title"] = "Customer Registration";
 }
@@ -8,6 +8,12 @@
         <form id="registerForm" asp-controller="Register" asp-action="Customer" method="post">
             <h1>@ViewData["Title"]</h1>
             <hr />
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="FullName" class="form-control" aria-required="true" placeholder="Full Name" />
+                <label asp-for="FullName">Full Name</label>
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
             <partial name="_RegistrationFormPartial" model="@Model" />
         </form>
         <p class="mt-3">

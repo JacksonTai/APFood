@@ -36,21 +36,24 @@ namespace APFood.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Customer(RegistrationModel registrationModel)
+        public async Task<IActionResult> Customer(CustomerRegistrationModel customerRegistrationModel)
         {
-            return await RegisterUser(registrationModel, "Customer");
+            return await RegisterUser(new Customer { FullName = customerRegistrationModel.FullName }, 
+                customerRegistrationModel, "Customer");
         }
 
         [HttpPost]
         public async Task<IActionResult> Runner(RegistrationModel registrationModel)
         {
-            return await RegisterUser(registrationModel, "Runner");
+            return await RegisterUser(new Runner { Points = 0.0 }, registrationModel, "Runner");
         }
 
         [HttpPost]
         public async Task<IActionResult> FoodVendor(FoodVendorRegistrationModel foodVendorRegistrationModel)
         {
-            return await RegisterUser(foodVendorRegistrationModel, "Food Vendor");
+            
+            return await RegisterUser(new FoodVendor { StoreName = foodVendorRegistrationModel.StoreName }, 
+                foodVendorRegistrationModel, "Food Vendor");
         }
 
         [HttpGet]
@@ -71,14 +74,18 @@ namespace APFood.Controllers
             return View();
         }
 
-        private async Task<IActionResult> RegisterUser(RegistrationModel registrationModel, String role)
+        private async Task<IActionResult> RegisterUser(APFoodUser aPFoodUser, RegistrationModel registrationModel, string role)
         {
+            if (registrationModel is null)
+            {
+                throw new ArgumentNullException(nameof(APFoodUser));
+            }
             if (!ModelState.IsValid)
             {
                 return View(registrationModel);
             }
-
-            var result = await TryRegisterUser(registrationModel, role);
+ 
+            var result = await TryRegisterUser(aPFoodUser, registrationModel, role);
             if (result.Succeeded)
             {
                 return RedirectToAction(role.Replace(" ", ""), "Login");
@@ -92,30 +99,16 @@ namespace APFood.Controllers
             return View(registrationModel);
         }
 
-        private async Task<IdentityResult> TryRegisterUser(RegistrationModel registrationModel, string role)
+        private async Task<IdentityResult> TryRegisterUser(APFoodUser aPFoodUser, RegistrationModel registrationModel, string role)
         {
             var userExist = await _userManager.FindByEmailAsync(registrationModel.Email);
             if (userExist != null)
             {
                 return IdentityResult.Failed(new IdentityError { Description = "Email already in use." });
             }
-
-            APFoodUser user;
-            if (role == "Food Vendor" && registrationModel is FoodVendorRegistrationModel foodVendorModel)
-            {
-                user = new FoodVendor
-                {
-                    storeName = foodVendorModel.storeName
-                };
-            }
-            else
-            {
-                return IdentityResult.Failed(new IdentityError { Description = "Invalid user role specified." });
-            }
-
-            await _userStore.SetUserNameAsync(user, registrationModel.Email, CancellationToken.None);
-            await _emailStore.SetEmailAsync(user, registrationModel.Email, CancellationToken.None);
-            var result = await _userManager.CreateAsync(user, registrationModel.Password);
+            await _userStore.SetUserNameAsync(aPFoodUser, registrationModel.Email, CancellationToken.None);
+            await _emailStore.SetEmailAsync(aPFoodUser, registrationModel.Email, CancellationToken.None);
+            var result = await _userManager.CreateAsync(aPFoodUser, registrationModel.Password);
             if (!result.Succeeded)
             {
                 return result;
@@ -126,7 +119,7 @@ namespace APFood.Controllers
                 return IdentityResult.Failed(new IdentityError { Description = "Specified role does not exist." });
             }
 
-            var roleResult = await _userManager.AddToRoleAsync(user, role);
+            var roleResult = await _userManager.AddToRoleAsync(aPFoodUser, role);
             if (!roleResult.Succeeded)
             {
                 return roleResult;

@@ -21,5 +21,13 @@ public class APFoodContext : IdentityDbContext<APFoodUser>
         builder.Entity<FoodVendor>()
                    .ToTable("FoodVendors")
                    .HasBaseType<APFoodUser>();
+
+        builder.Entity<Customer>()
+               .ToTable("Customers")
+               .HasBaseType<APFoodUser>();
+
+        builder.Entity<Runner>()
+               .ToTable("Runners")
+               .HasBaseType<APFoodUser>();
     }
 }

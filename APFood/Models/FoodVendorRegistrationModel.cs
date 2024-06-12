@@ -7,7 +7,7 @@ namespace APFood.Models
         [Required]
         [Display(Name = "Store Name")]
 
-        public required string storeName { get; set; }
+        public required string StoreName { get; set; }
     }
     
 }
