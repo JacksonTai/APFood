@@ -1,0 +1,25 @@
+﻿@model LoginModel
+
+@{
+    ViewData["Title"] = "Log in - Customer";
+}
+
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <section>
+            <form id="account" asp-controller="Login" asp-action="Customer" method="post">
+                <h1>@ViewData["Title"]</h1>
+                <hr />
+                <partial name="_LoginFormPartial" model="@Model" />
+            </form>
+            <p>
+                Not a Customer yet?<br/>
+                <a asp-controller="Register" asp-action="Customer">Register as a customer</a>
+            </p>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

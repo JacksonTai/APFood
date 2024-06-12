@@ -1,0 +1,18 @@
+﻿@model RegistrationModel
+@{
+    ViewData["Title"] = "Runner Registration";
+}
+
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <form id="registerForm" asp-controller="Register" asp-action="Runner" method="post">
+            <h1>@ViewData["Title"]</h1>
+            <hr />
+            <partial name="_RegistrationFormPartial" model="@Model" />
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
