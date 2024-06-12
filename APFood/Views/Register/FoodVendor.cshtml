@@ -1,0 +1,24 @@
+﻿@model FoodVendorRegistrationModel
+@{
+    ViewData["Title"] = "Food Vendor Registration";
+}
+
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <form id="registerForm" asp-controller="Register" asp-action="FoodVendor" method="post">
+            <h1>@ViewData["Title"]</h1>
+            <hr />
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="StoreName" class="form-control" aria-required="true" placeholder="Store Name" />
+                <label asp-for="StoreName">Store Name</label>
+                <span asp-validation-for="StoreName" class="text-danger"></span>
+            </div>
+            <partial name="_RegistrationFormPartial" model="@Model" />
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
