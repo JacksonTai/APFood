@@ -1,7 +1,6 @@
 ﻿using APFood.Areas.Identity.Data;
 using APFood.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APFood.Controllers
@@ -29,7 +28,6 @@ namespace APFood.Controllers
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _configuration = configuration;
-
         }
 
         [HttpPost]
