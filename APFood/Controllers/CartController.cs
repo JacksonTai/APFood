@@ -106,12 +106,14 @@ namespace APFood.Controllers
             }
 
             var totalItems = cart.Items.Sum(ci => ci.Quantity);
-            var totalPrice = cart.Items.Sum(ci => ci.Quantity * ci.Food.Price);
+            var subtotal = cart.Items.Sum(ci => ci.Quantity * ci.Food.Price);
+            var totalPrice = subtotal;
 
             return Json(new
             {
                 itemPrice = itemPrice.ToString("C"),
-                totalItems = totalItems,
+                totalItems = totalItems.ToString("C"),
+                subtotal = subtotal.ToString("C"),
                 totalPrice = totalPrice.ToString("C")
             });
         }

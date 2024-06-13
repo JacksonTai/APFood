@@ -13,6 +13,7 @@
         success: function (response) {
             document.getElementById(`item-price-${itemId}`).textContent = response.itemPrice;
             document.getElementById("total-items").textContent = `${response.totalItems} items`;
+            document.getElementById("subtotal").textContent = response.subtotal;
             document.getElementById("total-price").textContent = response.totalPrice;
         },
         error: function (xhr, status, error) {
