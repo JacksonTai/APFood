@@ -46,6 +46,25 @@ using(var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role)); 
         }
     }
+
+
+    var context = scope.ServiceProvider.GetRequiredService<APFoodContext>();
+    context.Database.Migrate();
+    SeedFoodData(context);
+}
+
+void SeedFoodData(APFoodContext context)
+{
+    if (!context.Foods.Any())
+    {
+        context.Foods.AddRange(
+            new Food { Name = "Pizza", Price = 8.99m },
+            new Food { Name = "Burger", Price = 5.49m },
+            new Food { Name = "Salad", Price = 4.75m },
+            new Food { Name = "Pasta", Price = 7.99m }
+        );
+        context.SaveChanges();
+    }
 }
 
 app.Run();
