@@ -4,6 +4,7 @@ using APFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APFood.Migrations
 {
     [DbContext(typeof(APFoodContext))]
-    partial class APFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20240615065322_AddDeliveryFee")]
+    partial class AddDeliveryFee
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,8 @@ namespace APFood.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.HasSequence<int>("QueueNumberSequence", "dbo");
+            modelBuilder.HasSequence<int>("QueueNumberSequence", "dbo")
+                .StartsAt(1000L);
 
             modelBuilder.Entity("APFood.Areas.Identity.Data.APFoodUser", b =>
                 {
@@ -172,16 +176,21 @@ namespace APFood.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("DineInOption")
-                        .HasColumnType("int");
+                    b.Property<string>("DineInOption")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("QueueNumber")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(max)")
                         .HasDefaultValueSql("NEXT VALUE FOR QueueNumberSequence");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Pending");
 
                     b.HasKey("Id");
 
@@ -240,13 +249,21 @@ namespace APFood.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Pending");
+
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Total")
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasComputedColumnSql("[Subtotal] - [RunnerPointsUsed]");
 
                     b.HasKey("Id");
 
@@ -589,7 +606,8 @@ namespace APFood.Migrations
                 {
                     b.Navigation("Items");
 
-                    b.Navigation("Payment");
+                    b.Navigation("Payment")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

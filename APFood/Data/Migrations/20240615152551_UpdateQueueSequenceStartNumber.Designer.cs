@@ -4,6 +4,7 @@ using APFood.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APFood.Migrations
 {
     [DbContext(typeof(APFoodContext))]
-    partial class APFoodContextModelSnapshot : ModelSnapshot
+    [Migration("20240615152551_UpdateQueueSequenceStartNumber")]
+    partial class UpdateQueueSequenceStartNumber
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,8 +248,10 @@ namespace APFood.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Total")
+                        .ValueGeneratedOnAddOrUpdate()
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasComputedColumnSql("[Subtotal] - [RunnerPointsUsed]");
 
                     b.HasKey("Id");
 

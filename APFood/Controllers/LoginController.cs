@@ -54,7 +54,7 @@ namespace APFood.Controllers
 
         private async Task<IActionResult> LoginUser(LoginModel loginModel, string role)
         {
-            var user = await _userManager.FindByEmailAsync(loginModel.Email);
+            APFoodUser? user = await _userManager.FindByEmailAsync(loginModel.Email);
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");

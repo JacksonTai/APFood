@@ -7,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("APFoodContextConnection") ?? throw new InvalidOperationException("Connection string 'APFoodContextConnection' not found.");
 
 builder.Services.AddDbContext<APFoodContext>(options => options.UseSqlServer(connectionString));
-
 builder.Services.AddDefaultIdentity<APFoodUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<APFoodContext>();
@@ -15,6 +14,15 @@ builder.Services.AddDefaultIdentity<APFoodUser>(options => options.SignIn.Requir
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddScoped<APFood.Services.Contract.ICartService, APFood.Services.CartService>();
+builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, APFood.Services.PaymentService>();
+builder.Services.AddScoped<APFood.Services.Contract.IOrderService, APFood.Services.OrderService>();
 
 var app = builder.Build();
 
@@ -24,7 +32,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
 }
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -38,7 +46,7 @@ using(var scope = app.Services.CreateScope())
 {
     // Roles Seeding
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var roles = new[] { "Food Vendor", "Runner", "Customer" };
+    string[] roles = ["Food Vendor", "Runner", "Customer"];
     foreach(var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
@@ -47,13 +55,27 @@ using(var scope = app.Services.CreateScope())
         }
     }
 
-
     var context = scope.ServiceProvider.GetRequiredService<APFoodContext>();
     context.Database.Migrate();
     SeedFoodData(context);
+
+    // Customer Seeding
+/*    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<APFoodUser>>();
+
+    APFoodUser? customer = await userManager.FindByEmailAsync("d");
+    if (customer == null)
+    {
+        customer = new APFoodUser
+        {
+            UserName = "johndoe",
+            Email = "johndoe@gmail.com",
+        };
+        await userManager.CreateAsync(customer, "");
+        await userManager.AddToRoleAsync(customer, "Customer");
+    }*/
 }
 
-void SeedFoodData(APFoodContext context)
+static void SeedFoodData(APFoodContext context)
 {
     if (!context.Foods.Any())
     {

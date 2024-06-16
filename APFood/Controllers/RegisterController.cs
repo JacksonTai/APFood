@@ -110,8 +110,8 @@ namespace APFood.Controllers
 
         private async Task<IdentityResult> TryRegisterUser(APFoodUser aPFoodUser, RegistrationModel registrationModel, string role)
         {
-            var userExist = await _userManager.FindByEmailAsync(registrationModel.Email);
-            if (userExist != null)
+            APFoodUser? user = await _userManager.FindByEmailAsync(registrationModel.Email);
+            if (user != null)
             {
                 return IdentityResult.Failed(new IdentityError { Description = "Email already in use." });
             }
@@ -149,7 +149,7 @@ namespace APFood.Controllers
                         {
                             CustomerId = customer.Id,
                             Customer = customer,
-                            Items = new List<CartItem>()
+                            Items = []
                         };
                         _context.Carts.Add(cart);
                         await _context.SaveChangesAsync();
