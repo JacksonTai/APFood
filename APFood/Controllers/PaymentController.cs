@@ -8,12 +8,8 @@ using APFood.Models.Payment;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace APFood.Controllers
 {
@@ -50,20 +46,23 @@ namespace APFood.Controllers
         {
             return paymentFormModel.PaymentMethod switch
             {
-                PaymentMethod.CreditCard => await HandlePaymentProcessing(
-                    () => ProcessCreditCardPayment(paymentFormModel), paymentFormModel),
+                PaymentMethod.CreditCard => await HandlePaymentProcessing(ProcessCreditCardPayment, paymentFormModel),
                 PaymentMethod.Paypal => await HandlePaymentProcessing(ProcessPayPalPayment, paymentFormModel),
                 _ => await ReturnWithErrorAsync(paymentFormModel)
             };
         }
 
-        public IActionResult Success()
+        public IActionResult Success(PaymentSuccessViewModel paymentSuccessViewModel)
         {
-            return View();
+            if (paymentSuccessViewModel.OrderId.HasValue && paymentSuccessViewModel.OrderId.HasValue)
+            {
+                return View(paymentSuccessViewModel);
+            }
+            return RedirectToAction("Index", "Home");
         }
 
         private async Task<IActionResult> HandlePaymentProcessing(
-           Func<Task<bool>> paymentProcessingFunc, PaymentFormModel paymentFormModel)
+             Func<Task<bool>> paymentProcessingFunc, PaymentFormModel paymentFormModel)
         {
             try
             {
@@ -71,7 +70,12 @@ namespace APFood.Controllers
                 if (paymentProcessed)
                 {
                     Order order = await ProcessPayment();
-                    return View("Success", order);
+                    PaymentSuccessViewModel paymentSuccessViewModel = new()
+                    {
+                        OrderId = order.Id,
+                        QueueNumber = order.QueueNumber
+                    };
+                    return RedirectToAction("Success", "Payment", paymentSuccessViewModel);
                 }
                 else
                 {
@@ -85,15 +89,19 @@ namespace APFood.Controllers
             }
         }
 
-        private static async Task<bool> ProcessPayPalPayment()
+        private async Task<bool> ProcessPayPalPayment()
         {
             // Simulate PayPal processing
             await Task.Delay(1000);
             return true;
         }
 
-        private static async Task<bool> ProcessCreditCardPayment(PaymentFormModel paymentFormModel)
+        private async Task<bool> ProcessCreditCardPayment()
         {
+            if (!ModelState.IsValid)
+            {
+                return false;
+            }
             // Simulate credit card payment processing
             await Task.Delay(1000);
             return true;
@@ -107,8 +115,9 @@ namespace APFood.Controllers
                 string userId = GetUserId();
                 Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Failed to retrieve the cart.");
 
-                CheckoutCartRequestModel checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
-                                                             ?? throw new Exception("Failed to deserialize checkout cart request.");
+                CheckoutCartRequestModel checkoutCartRequest =
+                    JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
+                    ?? throw new Exception("Failed to deserialize checkout cart request.");
 
                 DineInOption dineInOption = checkoutCartRequest.DineInOption;
                 string? location = checkoutCartRequest.Location;
@@ -121,6 +130,7 @@ namespace APFood.Controllers
                 await _paymentService.CreatePayment(createdOrder);
                 await _cartService.ClearCartAsync(userId);
                 HttpContext.Session.Remove(typeof(CheckoutCartRequestModel).Name);
+
 
                 return createdOrder;
             }
@@ -136,8 +146,9 @@ namespace APFood.Controllers
             try
             {
                 string checkoutCartRequestJson = GetCheckoutCartRequestFromSession();
-                CheckoutCartRequestModel checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
-                                                             ?? throw new Exception("Failed to deserialize checkout cart request.");
+                CheckoutCartRequestModel checkoutCartRequest =
+                    JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
+                    ?? throw new InvalidOperationException("Failed to deserialize checkout cart request.");
 
                 string userId = GetUserId();
                 List<CartItem> cartItems = await _cartService.GetCartItemsAsync(userId);

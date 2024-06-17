@@ -12,7 +12,7 @@ namespace APFood.Data
         public required List<OrderItem> Items { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public DineInOption DineInOption { get; set; } = DineInOption.Pickup;
-        public string? QueueNumber { get; set; }
+        public int QueueNumber { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

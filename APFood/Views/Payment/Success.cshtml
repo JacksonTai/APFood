@@ -1,11 +1,18 @@
-﻿<div class="container p-4">
+﻿@{
+    ViewData["Title"] = "Payment Success";
+}
+@using APFood.Models.Payment
+@model PaymentSuccessViewModel
+
+<div class="container p-4">
     <div class="row text-center justify-content-center">
         <div class="col-sm-6 col-sm-offset-3">
-            <h2>Payment Success</h2>
             <img src="~/img/payment_success.jpg" style="max-width: 15rem">
+            <h2>Payment Success</h2>
             <p>Thank you for your order. Your order has been placed successfully.</p>
+             <p class="fw-bold">Queue Number: @Model.QueueNumber</p>
             <div class="d-flex flex-column">
-                <a href="" class="btn btn-primary">View Order</a>
+                <a href="/Order/@Model.OrderId" class="btn btn-primary">View Order</a>
                 <a asp-controller="Home" asp-action="Index" class="btn btn-secodnary">Back to Home</a>
             </div>
         </div>

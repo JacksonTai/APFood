@@ -19,6 +19,7 @@ namespace APFood.Services
                 Items = cart.Items.Select(ci => new OrderItem
                 {
                     FoodId = ci.FoodId,
+                    Food = ci.Food,
                     Quantity = ci.Quantity
                 }).ToList(),
                 Status = OrderStatus.Pending,
