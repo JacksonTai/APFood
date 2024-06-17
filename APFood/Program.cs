@@ -66,7 +66,7 @@ using(var scope = app.Services.CreateScope())
     SeedFoodData(context);
 
     // Seed single superadmin
-    string email = "admin@apfood.com";
+    string email = "admin.apfood@apu.edu.my";
     string password = "Admin@123";
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<APFoodUser>>();
     APFoodUser? superadmin = await userManager.FindByEmailAsync(email);
