@@ -45,7 +45,7 @@ namespace APFood.Controllers
         [HttpPost]
         public async Task<IActionResult> Runner(RegistrationModel registrationModel)
         {
-            return await RegisterUser(new Runner { Points = 0.0 }, registrationModel, "Runner");
+            return await RegisterUser(new Runner { Points = 0 }, registrationModel, "Runner");
         }
 
         [HttpPost]
@@ -88,6 +88,15 @@ namespace APFood.Controllers
             var result = await TryRegisterUser(aPFoodUser, registrationModel, role);
             if (result.Succeeded)
             {
+                var customer = aPFoodUser as Customer;
+                if (customer != null)
+                {
+                    await CreateCustomerCart(customer);
+                }
+                else
+                {
+                    throw new InvalidCastException("Unable to cast APFoodUser to Customer.");
+                }
                 return RedirectToAction(role.Replace(" ", ""), "Login");
             }
 
@@ -101,8 +110,8 @@ namespace APFood.Controllers
 
         private async Task<IdentityResult> TryRegisterUser(APFoodUser aPFoodUser, RegistrationModel registrationModel, string role)
         {
-            var userExist = await _userManager.FindByEmailAsync(registrationModel.Email);
-            if (userExist != null)
+            APFoodUser? user = await _userManager.FindByEmailAsync(registrationModel.Email);
+            if (user != null)
             {
                 return IdentityResult.Failed(new IdentityError { Description = "Email already in use." });
             }
@@ -128,6 +137,42 @@ namespace APFood.Controllers
             return IdentityResult.Success;
         }
 
+        private async Task CreateCustomerCart(Customer customer)
+        {
+            if (customer != null)
+            {
+                using (var transaction = await _context.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        var cart = new Cart
+                        {
+                            CustomerId = customer.Id,
+                            Customer = customer,
+                            Items = []
+                        };
+                        _context.Carts.Add(cart);
+                        await _context.SaveChangesAsync();
+
+                        customer.CartId = cart.Id;
+                        customer.Cart = cart;
+                        _context.Customers.Update(customer);
+                        await _context.SaveChangesAsync();
+
+                        await transaction.CommitAsync();
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(customer));
+            }
+        }
 
         private IUserEmailStore<APFoodUser> GetEmailStore()
         {

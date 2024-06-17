@@ -1,0 +1,149 @@
+﻿@{
+    ViewData["Title"] = "Payment";
+}
+@using APFood.Models.Payment
+@model PaymentViewModel
+
+<div class="container pb-5">
+    <nav class="mt-5" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Cart">Cart</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+        </ol>
+    </nav>
+    <div class="row g-5 justify-content-center">
+        <div class="col-lg-4 order-md-last">
+            <h4 class="d-flex justify-content-between align-items-center mb-3">
+                <span>Order Summary</span>
+                <span class="badge bg-primary rounded-pill">@Model.CartItems.Count</span>
+            </h4>
+            <hr class="mb-4">
+            <ul class="list-group mb-0">
+                @foreach (var item in Model.CartItems)
+                {
+                    <li class="d-flex justify-content-between lh-sm">
+                        <P>@item.Food.Name x @item.Quantity</P>
+                        <span class="text-muted">RM @(item.Food.Price * item.Quantity) </span>
+                    </li>
+                }
+                <hr class="mb-4">
+                <li class="d-flex justify-content-between">
+                    <P>Subtotal</P>
+                    <p>@Model.OrderSummary.Subtotal.ToString("C")</p>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <P>Delivery Fee</P>
+                    <P>@Model.OrderSummary.DeliveryFee.ToString("C")</P>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <P>Runner Points Redeemed</P>
+                    <P>- RM1.00</P>
+                </li>
+                <hr class="mb-4">
+                <li class="d-flex justify-content-between">
+                    <h5>Total</h5>
+                    <h5>@Model.OrderSummary.Total.ToString("C")</h5>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-7">
+            <form asp-controller="Payment" asp-action="Index" method="post">
+                <div class="row g-3">
+                    <h1 class="mb-3">Payment</h1>
+                    <div class="mb-3">
+                        <label>
+                            <input type="radio" value="CreditCard" id="credit-card-option"
+                                   asp-for="PaymentFormModel.PaymentMethod" class="card-input-element" checked />
+                            <div class="card card-default card-input mb-3">
+                                <div class="p-3 d-flex align-items-center justify-content-between">
+                                    <span>Credit/Debit card</span>
+                                    <div class="icons">
+                                        <img src="https://i.imgur.com/2ISgYja.png" width="30">
+                                        <img src="https://i.imgur.com/W1vtnOV.png" width="30">
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                        <label>
+                            <input type="radio" value="PayPal" id="paypal-option"
+                                   asp-for="PaymentFormModel.PaymentMethod" class="card-input-element" />
+                            <div class="card card-default card-input">
+                                <div class="p-3 d-flex align-items-center justify-content-between">
+                                    <span>Paypal</span>
+                                    <img src="https://i.imgur.com/7kQEsHU.png" width="30">
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="credit-card-form" class="p-0">
+                        <div class="row gy-3 mx-auto">
+                            <div class="col-md-6">
+                                <label for="cc-name" class="form-label">Card Holder</label>
+                                <input asp-for="PaymentFormModel.CardHolder" class="form-control" />
+                                <span asp-validation-for="PaymentFormModel.CardHolder" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="cc-number" class="form-label">Card number</label>
+                                <input asp-for="PaymentFormModel.CardNumber" class="form-control" maxlength="16" />
+                                <span asp-validation-for="PaymentFormModel.CardNumber" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="cc-expiration" class="form-label">Expiration</label>
+                                <select asp-for="PaymentFormModel.ExpirationMonth" class="form-control">
+                                    <option selected disabled>Month</option>
+                                    <option value='01'>January</option>
+                                    <option value='02'>February</option>
+                                    <option value='03'>March</option>
+                                    <option value='04'>April</option>
+                                    <option value='05'>May</option>
+                                    <option value='06'>June</option>
+                                    <option value='07'>July</option>
+                                    <option value='08'>August</option>
+                                    <option value='09'>September</option>
+                                    <option value='10'>October</option>
+                                    <option value='11'>November</option>
+                                    <option value='12'>December</option>
+                                </select>
+                                <span asp-validation-for="PaymentFormModel.ExpirationMonth" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="d-none d-md-block form-label">&nbsp;</label>
+                                <select asp-for="PaymentFormModel.ExpirationYear" class="form-control">
+                                    <option selected disabled value="">Year</option>
+                                    @foreach (var year in @Model.YearRange)
+                                    {
+                                        <option value="@year.ToString()">@year</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="PaymentFormModel.ExpirationYear" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="cc-cvv" class="form-label">CVV</label>
+                                <input asp-for="PaymentFormModel.CVV" type="text" id="cc-cvv" maxlength="3"
+                                       class="form-control">
+                                <span asp-validation-for="PaymentFormModel.CVV" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <button type="submit" class=" btn btn-primary">Make Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Styles {
+    <link href="~/css/payment.css" rel="stylesheet" />
+}
+@section Scripts {
+@*     <partial name="_ValidationScriptsPartial" /> *@
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/js/payment.js"></script>
+}

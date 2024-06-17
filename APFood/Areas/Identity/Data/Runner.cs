@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APFood.Areas.Identity.Data
 {
@@ -7,7 +8,8 @@ namespace APFood.Areas.Identity.Data
     {
 
         [DefaultValue(0.0)]
-        public double? Points { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? Points { get; set; }
 
     }
 }
