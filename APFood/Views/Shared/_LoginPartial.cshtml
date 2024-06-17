@@ -1,0 +1,64 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using APFood.Areas.Identity.Data
+
+@inject SignInManager<APFoodUser> SignInManager
+@inject UserManager<APFoodUser> UserManager
+
+<ul class="navbar-nav me-5">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <li class="nav-item">
+            <a id="manage" class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Account</a>
+        </li>
+        <li class="nav-item">
+            <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button id="logout" type="submit" class="nav-link btn btn-link text-dark border-0">Logout</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        @*     <li class="nav-item">
+    <a class="nav-link text-dark" id="register" asp-area="Identity" asp-page="/Account/CustomerRegister">Register</a>
+    </li>
+    <li class="nav-item">
+    <a class="nav-link text-dark" id="login" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li> *@
+        <li class="nav-item">
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Register
+                </a>
+                <ul class="dropdown-menu" style="min-width:fit-content">
+                    <li>
+                        <a class="dropdown-item" asp-controller="Register" asp-action="Customer">Customer</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Register" asp-action="Runner">Runner</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Register" asp-action="FoodVendor">Food Vendor</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Login
+                </a>
+                <ul class="dropdown-menu" style="min-width:fit-content">
+                    <li>
+                        <a class="dropdown-item" asp-controller="Login" asp-action="Customer">Customer</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Login" asp-action="Runner">Runner</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Login" asp-action="FoodVendor">Food Vendor</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+    }
+</ul>

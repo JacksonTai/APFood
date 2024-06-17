@@ -1,0 +1,25 @@
+label {
+    width: 100%;
+}
+
+.card-input-element {
+    display: none;
+}
+
+.card-input:hover {
+    cursor: pointer;
+}
+
+.card-input-element:checked + .card-input {
+    box-shadow: 0 0 1px 1px #0D6EFD;
+}
+
+#credit-card-form {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#credit-card-form.hide {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
