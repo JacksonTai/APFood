@@ -8,8 +8,12 @@ using APFood.Models.Payment;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace APFood.Controllers
 {
@@ -18,12 +22,14 @@ namespace APFood.Controllers
         IPaymentService paymentService,
         IOrderService orderService,
         ICartService cartService,
-        IDeliveryTaskService deliveryTaskService) : Controller
+        IDeliveryTaskService deliveryTaskService,
+        ILogger<PaymentController> logger) : Controller
     {
         private readonly IPaymentService _paymentService = paymentService;
         private readonly IOrderService _orderService = orderService;
         private readonly ICartService _cartService = cartService;
         private readonly IDeliveryTaskService _deliveryTaskService = deliveryTaskService;
+        private readonly ILogger<PaymentController> _logger = logger;
 
         public async Task<IActionResult> Index()
         {
@@ -32,8 +38,9 @@ namespace APFood.Controllers
                 PaymentViewModel paymentViewModel = await CreatePaymentViewModelAsync();
                 return View(paymentViewModel);
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
+                _logger.LogError(ex, "Checkout cart request is missing in the session.");
                 return RedirectToAction("Index", "Cart");
             }
         }
@@ -41,18 +48,13 @@ namespace APFood.Controllers
         [HttpPost]
         public async Task<IActionResult> Index(PaymentFormModel paymentFormModel)
         {
-            switch (paymentFormModel.PaymentMethod)
+            return paymentFormModel.PaymentMethod switch
             {
-                case PaymentMethod.CreditCard:
-                    return await ProcessCreditCardPayment(paymentFormModel);
-                case PaymentMethod.Paypal:
-                    return await ProcessPayPalPayment(paymentFormModel);
-                default:
-                    ModelState.AddModelError(string.Empty, "Invalid payment method");
-                    var invalidPaymentViewModel = await CreatePaymentViewModelAsync();
-                    invalidPaymentViewModel.PaymentFormModel = paymentFormModel;
-                    return View(invalidPaymentViewModel);
-            }
+                PaymentMethod.CreditCard => await HandlePaymentProcessing(
+                    () => ProcessCreditCardPayment(paymentFormModel), paymentFormModel),
+                PaymentMethod.Paypal => await HandlePaymentProcessing(ProcessPayPalPayment, paymentFormModel),
+                _ => await ReturnWithErrorAsync(paymentFormModel)
+            };
         }
 
         public IActionResult Success()
@@ -60,93 +62,132 @@ namespace APFood.Controllers
             return View();
         }
 
-        private async Task<IActionResult> ProcessPayPalPayment(PaymentFormModel paymentFormModel)
+        private async Task<IActionResult> HandlePaymentProcessing(
+           Func<Task<bool>> paymentProcessingFunc, PaymentFormModel paymentFormModel)
         {
-            bool paymentProcessed = true; // Mimic the result of PayPal API to process the payment
-            if (paymentProcessed)
+            try
             {
-                Order order = await ProcessPayment();
-                return View("Success", order);
+                bool paymentProcessed = await paymentProcessingFunc();
+                if (paymentProcessed)
+                {
+                    Order order = await ProcessPayment();
+                    return View("Success", order);
+                }
+                else
+                {
+                    return await ReturnWithErrorAsync(paymentFormModel);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, "Payment processing failed. Please try again.");
-                var paymentViewModel = await CreatePaymentViewModelAsync();
-                paymentViewModel.PaymentFormModel = paymentFormModel;
-                return View("Index", paymentViewModel);
+                _logger.LogError(ex, "An error occurred during payment processing.");
+                return await ReturnWithErrorAsync(paymentFormModel);
             }
         }
 
-        private async Task<IActionResult> ProcessCreditCardPayment(PaymentFormModel paymentFormModel)
+        private static async Task<bool> ProcessPayPalPayment()
         {
-            if (!ModelState.IsValid)
-            {
-                var paymentViewModel = await CreatePaymentViewModelAsync();
-                paymentViewModel.PaymentFormModel = paymentFormModel;
-                return View("Index", paymentViewModel);
-            }
+            // Simulate PayPal processing
+            await Task.Delay(1000);
+            return true;
+        }
 
-            bool paymentProcessed = true; // Mimic the result of credit card payment gateway processing
-            if (paymentProcessed)
-            {
-                Order order = await ProcessPayment();
-                return View("Success", order);
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "Payment processing failed. Please try again.");
-                var paymentViewModel = await CreatePaymentViewModelAsync();
-                paymentViewModel.PaymentFormModel = paymentFormModel;
-                return View("Index", paymentViewModel);
-            }
+        private static async Task<bool> ProcessCreditCardPayment(PaymentFormModel paymentFormModel)
+        {
+            // Simulate credit card payment processing
+            await Task.Delay(1000);
+            return true;
         }
 
         private async Task<Order> ProcessPayment()
         {
-            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ?? throw new Exception();
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User not found");
-            Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception();
-            CheckoutCartRequest checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequest>(checkoutCartRequestJson) ?? throw new Exception();
-            DineInOption dineInOption = checkoutCartRequest.DineInOption;
-            string? location = checkoutCartRequest.Location;
-
-            Order createdOrder = await _orderService.CreateOrder(cart, dineInOption);
-            if (dineInOption == DineInOption.Delivery && location != null)
+            try
             {
-                await _deliveryTaskService.CreateDeliveryTask(createdOrder, location);
-            }
-            await _paymentService.CreatePayment(createdOrder);
+                string checkoutCartRequestJson = GetCheckoutCartRequestFromSession();
+                string userId = GetUserId();
+                Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Failed to retrieve the cart.");
 
-            await _cartService.ClearCartAsync(userId);
-            HttpContext.Session.Remove(typeof(CheckoutCartRequest).Name);
-            return createdOrder;
+                CheckoutCartRequestModel checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
+                                                             ?? throw new Exception("Failed to deserialize checkout cart request.");
+
+                DineInOption dineInOption = checkoutCartRequest.DineInOption;
+                string? location = checkoutCartRequest.Location;
+
+                Order createdOrder = await _orderService.CreateOrder(cart, dineInOption);
+                if (dineInOption == DineInOption.Delivery && !string.IsNullOrEmpty(location))
+                {
+                    await _deliveryTaskService.CreateDeliveryTask(createdOrder, location);
+                }
+                await _paymentService.CreatePayment(createdOrder);
+                await _cartService.ClearCartAsync(userId);
+                HttpContext.Session.Remove(typeof(CheckoutCartRequestModel).Name);
+
+                return createdOrder;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing the payment.");
+                throw new InvalidOperationException("An error occurred while processing the payment.", ex);
+            }
         }
 
         private async Task<PaymentViewModel> CreatePaymentViewModelAsync()
         {
-            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ??
-                 throw new InvalidOperationException("No checkout cart request found in session.");
-            CheckoutCartRequest checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequest>(checkoutCartRequestJson) ?? throw new Exception();
-
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User not found");
-            List<CartItem> cartItems = await _cartService.GetCartItemsAsync(userId);
-
-            decimal subtotal = await _cartService.GetTotalAsync(userId);
-            decimal total = subtotal;
-            bool isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;
-
-            return new PaymentViewModel
+            try
             {
-                CartItems = cartItems,
-                CheckoutCartRequest = checkoutCartRequest,
-                OrderSummary = new OrderSummaryModel
+                string checkoutCartRequestJson = GetCheckoutCartRequestFromSession();
+                CheckoutCartRequestModel checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
+                                                             ?? throw new Exception("Failed to deserialize checkout cart request.");
+
+                string userId = GetUserId();
+                List<CartItem> cartItems = await _cartService.GetCartItemsAsync(userId);
+
+                decimal subtotal = await _cartService.GetTotalAsync(userId);
+                decimal total = subtotal;
+                bool isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;
+
+                return new PaymentViewModel
                 {
-                    Subtotal = subtotal,
-                    DeliveryFee = isDelivery ? OrderConstants.DeliveryFee : 0,
-                    Total = isDelivery ? total += OrderConstants.DeliveryFee : total
-                },
-                PaymentFormModel = new PaymentFormModel(),
-            };
+                    CartItems = cartItems,
+                    CheckoutCartRequest = checkoutCartRequest,
+                    OrderSummary = new OrderSummaryModel
+                    {
+                        Subtotal = subtotal,
+                        DeliveryFee = isDelivery ? OrderConstants.DeliveryFee : 0,
+                        Total = isDelivery ? total + OrderConstants.DeliveryFee : total
+                    },
+                    PaymentFormModel = new PaymentFormModel(),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while creating the payment view model.");
+                throw new InvalidOperationException("An error occurred while creating the payment view model.", ex);
+            }
+        }
+
+        private async Task<IActionResult> ReturnWithErrorAsync(PaymentFormModel paymentFormModel)
+        {
+            ModelState.AddModelError(string.Empty, "Payment processing failed. Please try again.");
+            PaymentViewModel paymentViewModel = await CreatePaymentViewModelAsync();
+            paymentViewModel.PaymentFormModel = paymentFormModel;
+            return View("Index", paymentViewModel);
+        }
+
+        private string GetCheckoutCartRequestFromSession()
+        {
+            string? checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequestModel).Name);
+            if (string.IsNullOrEmpty(checkoutCartRequestJson))
+            {
+                throw new InvalidOperationException("No checkout cart request found in session.");
+            }
+            return checkoutCartRequestJson;
+        }
+
+        private string GetUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                   ?? throw new UnauthorizedAccessException("User not authenticated.");
         }
     }
 }

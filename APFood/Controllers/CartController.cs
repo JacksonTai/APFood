@@ -23,7 +23,7 @@ namespace APFood.Controllers
             try
             {
                 var userId = GetUserId();
-                var checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequest();
+                var checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequestModel();
                 var cartViewModel = await CreateCartViewModel(userId, checkoutCartRequest);
 
                 return View(cartViewModel);
@@ -36,7 +36,7 @@ namespace APFood.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Index(CheckoutCartRequest checkoutCartRequest)
+        public async Task<IActionResult> Index(CheckoutCartRequestModel checkoutCartRequest)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace APFood.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateQuantity([FromBody] UpdateCartItemQuantityRequest request)
+        public async Task<IActionResult> UpdateQuantity([FromBody] UpdateCartItemQuantityModel request)
         {
             try
             {
@@ -84,7 +84,7 @@ namespace APFood.Controllers
                 string userId = GetUserId();
                 Cart? cart = await _cartService.GetCartAsync(userId);
                 CartItem? cartItem = cart?.Items.FirstOrDefault(ci => ci.Id == request.ItemId);
-                CheckoutCartRequest checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequest();
+                CheckoutCartRequestModel checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequestModel();
                 bool isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;
                 decimal subtotal = await _cartService.GetTotalAsync(userId);
                 decimal total = isDelivery ? subtotal + OrderConstants.DeliveryFee : subtotal;
@@ -105,7 +105,7 @@ namespace APFood.Controllers
             {
                 string userId = GetUserId();
                 await _cartService.RemoveItemAsync(itemId);
-                CheckoutCartRequest checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequest();
+                CheckoutCartRequestModel checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequestModel();
                 bool isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;
                 decimal subtotal = await _cartService.GetTotalAsync(userId);
                 decimal total = isDelivery ? subtotal + OrderConstants.DeliveryFee : subtotal;
@@ -125,7 +125,7 @@ namespace APFood.Controllers
             try
             {
                 var userId = GetUserId();
-                var checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequest();
+                var checkoutCartRequest = GetCheckoutCartRequestFromSession() ?? new CheckoutCartRequestModel();
                 var subtotal = await _cartService.GetTotalAsync(userId);
 
                 if (Enum.TryParse(dineInOption, out DineInOption option))
@@ -153,20 +153,20 @@ namespace APFood.Controllers
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("User not found");
         }
 
-        private CheckoutCartRequest? GetCheckoutCartRequestFromSession()
+        private CheckoutCartRequestModel? GetCheckoutCartRequestFromSession()
         {
-            var checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name);
+            var checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequestModel).Name);
             return !string.IsNullOrEmpty(checkoutCartRequestJson)
-                ? JsonConvert.DeserializeObject<CheckoutCartRequest>(checkoutCartRequestJson)
+                ? JsonConvert.DeserializeObject<CheckoutCartRequestModel>(checkoutCartRequestJson)
                 : null;
         }
 
-        private void SetCheckoutCartRequestInSession(CheckoutCartRequest checkoutCartRequest)
+        private void SetCheckoutCartRequestInSession(CheckoutCartRequestModel checkoutCartRequest)
         {
-            HttpContext.Session.SetString(typeof(CheckoutCartRequest).Name, JsonConvert.SerializeObject(checkoutCartRequest));
+            HttpContext.Session.SetString(typeof(CheckoutCartRequestModel).Name, JsonConvert.SerializeObject(checkoutCartRequest));
         }
 
-        private async Task<CartViewModel> CreateCartViewModel(string userId, CheckoutCartRequest checkoutCartRequest)
+        private async Task<CartViewModel> CreateCartViewModel(string userId, CheckoutCartRequestModel checkoutCartRequest)
         {
             var subtotal = await _cartService.GetTotalAsync(userId);
             var isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;

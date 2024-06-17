@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace APFood.Models.Cart
 {
-    public class CheckoutCartRequest
+    public class CheckoutCartRequestModel
     {
         public DineInOption DineInOption { get; set; } = DineInOption.Pickup;
 
