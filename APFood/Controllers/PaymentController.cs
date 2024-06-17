@@ -17,16 +17,25 @@ namespace APFood.Controllers
     public class PaymentController(
         IPaymentService paymentService,
         IOrderService orderService,
-        ICartService cartService) : Controller
+        ICartService cartService,
+        IDeliveryTaskService deliveryTaskService) : Controller
     {
         private readonly IPaymentService _paymentService = paymentService;
         private readonly IOrderService _orderService = orderService;
         private readonly ICartService _cartService = cartService;
+        private readonly IDeliveryTaskService _deliveryTaskService = deliveryTaskService;
 
         public async Task<IActionResult> Index()
         {
-            var paymentViewModel = await CreatePaymentViewModelAsync();
-            return View(paymentViewModel);
+            try
+            {
+                PaymentViewModel paymentViewModel = await CreatePaymentViewModelAsync();
+                return View(paymentViewModel);
+            }
+            catch (InvalidOperationException)
+            {
+                return RedirectToAction("Index", "Cart");
+            }
         }
 
         [HttpPost]
@@ -94,12 +103,18 @@ namespace APFood.Controllers
 
         private async Task<Order> ProcessPayment()
         {
+            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ?? throw new Exception();
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User not found");
             Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception();
-            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ?? throw new Exception();
             CheckoutCartRequest checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequest>(checkoutCartRequestJson) ?? throw new Exception();
+            DineInOption dineInOption = checkoutCartRequest.DineInOption;
+            string? location = checkoutCartRequest.Location;
 
-            Order createdOrder = await _orderService.CreateOrder(cart, checkoutCartRequest.DineInOption);
+            Order createdOrder = await _orderService.CreateOrder(cart, dineInOption);
+            if (dineInOption == DineInOption.Delivery && location != null)
+            {
+                await _deliveryTaskService.CreateDeliveryTask(createdOrder, location);
+            }
             await _paymentService.CreatePayment(createdOrder);
 
             await _cartService.ClearCartAsync(userId);
@@ -109,7 +124,8 @@ namespace APFood.Controllers
 
         private async Task<PaymentViewModel> CreatePaymentViewModelAsync()
         {
-            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ?? throw new Exception();
+            string checkoutCartRequestJson = HttpContext.Session.GetString(typeof(CheckoutCartRequest).Name) ??
+                 throw new InvalidOperationException("No checkout cart request found in session.");
             CheckoutCartRequest checkoutCartRequest = JsonConvert.DeserializeObject<CheckoutCartRequest>(checkoutCartRequestJson) ?? throw new Exception();
 
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User not found");
@@ -117,7 +133,6 @@ namespace APFood.Controllers
 
             decimal subtotal = await _cartService.GetTotalAsync(userId);
             decimal total = subtotal;
-
             bool isDelivery = checkoutCartRequest.DineInOption == DineInOption.Delivery;
 
             return new PaymentViewModel

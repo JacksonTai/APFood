@@ -6,8 +6,8 @@ namespace APFood.Models
     {
         [Required]
         [Display(Name = "Full Name")]
-
         public required string FullName { get; set; }
+
     }
     
 }

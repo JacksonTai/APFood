@@ -23,6 +23,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<APFood.Services.Contract.ICartService, APFood.Services.CartService>();
 builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, APFood.Services.PaymentService>();
 builder.Services.AddScoped<APFood.Services.Contract.IOrderService, APFood.Services.OrderService>();
+builder.Services.AddScoped<APFood.Services.Contract.IDeliveryTaskService, APFood.Services.DeliveryTaskService>();
 
 var app = builder.Build();
 

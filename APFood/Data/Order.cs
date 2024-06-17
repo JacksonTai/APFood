@@ -7,11 +7,11 @@ namespace APFood.Data
     {
         public int Id { get; set; }
         public required string CustomerId { get; set; }
-        public Customer Customer { get; set; }
+        public required Customer Customer { get; set; }
         public Payment? Payment { get; set; }
         public required List<OrderItem> Items { get; set; }
-        public OrderStatus Status { get; set; }
-        public DineInOption DineInOption { get; set; }
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
+        public DineInOption DineInOption { get; set; } = DineInOption.Pickup;
         public string? QueueNumber { get; set; }
         public DateTime CreatedAt { get; set; }
     }

@@ -15,6 +15,7 @@ namespace APFood.Services
             Order order = new()
             {
                 CustomerId = cart.CustomerId,
+                Customer = cart.Customer,
                 Items = cart.Items.Select(ci => new OrderItem
                 {
                     FoodId = ci.FoodId,

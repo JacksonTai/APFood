@@ -61,10 +61,10 @@ namespace APFood.Services
 
         public async Task ClearCartAsync(string userId)
         {
-            Cart? cart = await _context.Carts
+            Cart cart = await _context.Carts
                 .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.CustomerId == userId);
-            _context.CartItems.RemoveRange(cart?.Items);
+                .FirstOrDefaultAsync(c => c.CustomerId == userId) ?? throw new Exception("Cart ot found");
+            _context.CartItems.RemoveRange(cart.Items);
             await _context.SaveChangesAsync();
         }
 

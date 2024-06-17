@@ -1,16 +1,13 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Constants;
 using APFood.Constants.Order;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace APFood.Data;
 
-public class APFoodContext : IdentityDbContext<APFoodUser>
+public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDbContext<APFoodUser>(options)
 {
-    public APFoodContext(DbContextOptions<APFoodContext> options)
-        : base(options)
-    {
-    }
     public DbSet<FoodVendor> FoodVendors { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Runner> Runners { get; set; }
@@ -20,6 +17,8 @@ public class APFoodContext : IdentityDbContext<APFoodUser>
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Payment> Payments { get; set; }
+    public DbSet<DeliveryTask> DeliveryTasks { get; set; }
+    public DbSet<RunnerDeliveryTask> RunnerDeliveryTasks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -77,7 +76,6 @@ public class APFoodContext : IdentityDbContext<APFoodUser>
             .ValueGeneratedOnAdd()
             .HasDefaultValueSql("NEXT VALUE FOR QueueNumberSequence");
 
-
         builder.Entity<Order>()
             .Property(o => o.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
@@ -123,5 +121,27 @@ public class APFoodContext : IdentityDbContext<APFoodUser>
             .Property(p => p.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
 
+        // DeliveryTask
+        builder.Entity<DeliveryTask>()
+           .HasOne(dt => dt.Order)
+           .WithOne()
+           .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
+
+        builder.Entity<DeliveryTask>()
+            .Property(dt => dt.Status)
+            .HasConversion<string>()
+            .HasDefaultValue(DeliveryStatus.Pending);
+
+        builder.Entity<RunnerDeliveryTask>()
+            .HasOne(rdt => rdt.Runner)
+            .WithMany()
+            .HasForeignKey(rdt => rdt.RunnerId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<RunnerDeliveryTask>()
+            .HasOne(rdt => rdt.DeliveryTask)
+            .WithMany()
+            .HasForeignKey(rdt => rdt.DeliveryTaskId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
