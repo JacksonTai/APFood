@@ -5,7 +5,9 @@ using APFood.Services.Contract;
 
 namespace APFood.Services
 {
-    public class PaymentService(APFoodContext context, ILogger<PaymentService> logger) : IPaymentService
+    public class PaymentService(
+        APFoodContext context, 
+        ILogger<PaymentService> logger) : IPaymentService
     {
         private readonly APFoodContext _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly ILogger<PaymentService> _logger = logger;

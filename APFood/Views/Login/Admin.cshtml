@@ -1,21 +1,17 @@
 ﻿@model LoginModel
 
 @{
-    ViewData["Title"] = "Log in - Runner";
+    ViewData["Title"] = "Log in - Admin";
 }
 
 <div class="row">
     <div class="col-lg-6 mx-auto">
         <section>
-            <form id="account" asp-controller="Login" asp-action="Runner" method="post">
+            <form id="account" asp-controller="Login" asp-action="Admin" method="post">
                 <h1>@ViewData["Title"]</h1>
                 <hr />
                 <partial name="_LoginFormPartial" model="@Model" />
             </form>
-            <p>
-                Not a Runner yet?<br/>
-                <a asp-controller="Register" asp-action="Customer">Register as a runner</a>
-            </p>
         </section>
     </div>
 </div>

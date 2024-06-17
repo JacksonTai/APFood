@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace APFood.Models
+namespace APFood.Models.Register
 {
     public class FoodVendorRegistrationModel : RegistrationModel
     {
@@ -9,5 +9,5 @@ namespace APFood.Models
 
         public required string StoreName { get; set; }
     }
-    
+
 }

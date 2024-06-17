@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace APFood.Models
+namespace APFood.Models.Register
 {
     public class RegistrationModel
     {
