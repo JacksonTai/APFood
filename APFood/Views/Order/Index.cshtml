@@ -1,1 +1,144 @@
-﻿Order
+﻿@{
+    ViewData["Title"] = "Order";
+}
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <h1 class="text-start fs-2">Order</h1>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="orderTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="processing-tab" data-toggle="tab"
+                       href="#processing" role="tab" aria-controls="processing" aria-selected="true">
+                        Processing <span class="badge bg-primary">4</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="completed-tab" data-toggle="tab"
+                       href="#completed" role="tab" aria-controls="completed" aria-selected="false">
+                        Completed <span class="badge bg-primary">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="cancelled-tab" data-toggle="tab"
+                       href="#cancelled" role="tab" aria-controls="cancelled" aria-selected="false">
+                        Cancelled <span class="badge bg-primary">4</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="orderTabsContent">
+                <div class="tab-pane fade show active" id="processing" role="tabpanel" aria-labelledby="processing-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Order Time</th>
+                                <th>Order Total</th>
+                                <th>Queue Number</th>
+                                <th>Dining Option</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>W01</td>
+                                <td>10 June 2024 12:00 PM</td>
+                                <td>RM19.23</td>
+                                <td>4</td>
+                                <td>Pick up</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary">Details</a>
+                                    <a href="#" class="btn btn-sm btn-success">Order Received</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Food Name</th>
+                                <th>Quantity</th>
+                                <th>Date/Time</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>W03</td>
+                                <td>TP08467</td>
+                                <td>Chicken Chop</td>
+                                <td>1x</td>
+                                <td>09 June 2024 01:00 PM</td>
+                                <td>15</td>
+                            </tr>
+                            <tr>
+                                <td>W04</td>
+                                <td>TP09321</td>
+                                <td>Caesar Salad</td>
+                                <td>2x</td>
+                                <td>09 June 2024 02:30 PM</td>
+                                <td>30</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Food Name</th>
+                                <th>Quantity</th>
+                                <th>Date/Time</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>W05</td>
+                                <td>TP05632</td>
+                                <td>Grilled Fish</td>
+                                <td>1x</td>
+                                <td>08 June 2024 11:00 AM</td>
+                                <td>25</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+    // Open the default tab
+    document.getElementById("Processing").style.display = "block";
+    document.getElementsByClassName("tablinks")[0].className += " active";
+</script>

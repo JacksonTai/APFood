@@ -131,7 +131,6 @@ namespace APFood.Controllers
                 await _cartService.ClearCartAsync(userId);
                 HttpContext.Session.Remove(typeof(CheckoutCartRequestModel).Name);
 
-
                 return createdOrder;
             }
             catch (Exception ex)
