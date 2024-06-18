@@ -1,4 +1,6 @@
-﻿using APFood.Services.Contract;
+﻿using APFood.Constants.Order;
+using APFood.Models.Order;
+using APFood.Services.Contract;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APFood.Controllers
@@ -8,20 +10,26 @@ namespace APFood.Controllers
     {
         private readonly IOrderService _orderService = orderService;
 
-        public IActionResult Index()
+        [HttpGet]
+        public async Task<IActionResult> Index(OrderStatus status = OrderStatus.Pending)
         {
-            return View();
+            List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status);
+            Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync();
+            return View(new OrderViewModel
+            {
+                OrderList = orders,
+                OrderCounts = orderCounts,
+                 CurrentStatus = status
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Detail(int id)
         {
-            var orderDetails = await _orderService.GetOrderDetailAsync(id);
-            if (orderDetails == null)
-            {
-                return NotFound();
-            }
-            return View(orderDetails);
+            OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id);
+            return orderDetail == null ? NotFound() : View(orderDetail);
         }
+
+
     }
 }

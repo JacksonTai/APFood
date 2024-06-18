@@ -8,6 +8,8 @@ namespace APFood.Services.Contract
     {
         Task<Order> CreateOrder(Cart cart, DineInOption dineInOption);
         Task<Order?> GetOrderByIdAsync(int orderId);
+        Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status);
+        Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync();
         Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId);
     }
 }
