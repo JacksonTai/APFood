@@ -1,12 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using APFood.Models.Attributes;
+using System.ComponentModel.DataAnnotations;
 
-namespace APFood.Models
+namespace APFood.Models.Register
 {
     public class RegistrationModel
     {
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
+        [EmailDomain("apu.edu.my", "mail.apu.edu.my", ErrorMessage = "Please enter a valid APU email")]
         public required string Email { get; set; }
 
         [Required]

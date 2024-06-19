@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace APFood.Controllers
 {
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = UserRole.Customer)]
     public class PaymentController(
         IPaymentService paymentService,
         IOrderService orderService,

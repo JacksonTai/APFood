@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace APFood.Controllers
 {
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = UserRole.Customer)]
     public class CartController(ICartService cartService, ILogger<CartController> logger) : Controller
     {
         private readonly ICartService _cartService = cartService ?? throw new ArgumentNullException(nameof(cartService));

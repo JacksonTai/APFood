@@ -3,6 +3,7 @@ using APFood.Constants;
 using APFood.Constants.Order;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace APFood.Data;
 
@@ -10,7 +11,6 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
 {
     public DbSet<FoodVendor> FoodVendors { get; set; }
     public DbSet<Customer> Customers { get; set; }
-    public DbSet<Runner> Runners { get; set; }
     public DbSet<Food> Foods { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
@@ -28,12 +28,6 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
                    .ToTable("FoodVendors")
                    .HasBaseType<APFoodUser>();
 
-        builder.Entity<Runner>()
-           .ToTable("Runners")
-           .HasBaseType<APFoodUser>()
-           .Property(r => r.Points)
-           .HasPrecision(18, 2);
-
         // Customer
         builder.Entity<Customer>()
                .ToTable("Customers")
@@ -43,6 +37,10 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
               .HasOne(c => c.Cart)
               .WithOne(c => c.Customer)
               .HasForeignKey<Customer>(c => c.CartId);
+
+        builder.Entity<Customer>()
+            .Property(r => r.Points)
+            .HasPrecision(18, 2);
 
         // Food
         builder.Entity<Food>()

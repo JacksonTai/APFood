@@ -1,4 +1,5 @@
-﻿using APFood.Data;
+﻿using APFood.Areas.Identity.Data;
+using APFood.Data;
 using APFood.Services.Contract;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,41 @@ namespace APFood.Services
     public class CartService(APFoodContext context) : ICartService
     {
         private readonly APFoodContext _context = context;
+
+        public async Task CreateCustomerCart(Customer customer)
+        {
+            if (customer != null)
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    var cart = new Cart
+                    {
+                        CustomerId = customer.Id,
+                        Customer = customer,
+                        Items = []
+                    };
+                    _context.Carts.Add(cart);
+                    await _context.SaveChangesAsync();
+
+                    customer.CartId = cart.Id;
+                    customer.Cart = cart;
+                    _context.Customers.Update(customer);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(customer));
+            }
+        }
 
         public async Task<Cart?> GetCartAsync(string userId)
         {
