@@ -3,6 +3,7 @@ using APFood.Constants;
 using APFood.Constants.Order;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace APFood.Data;
@@ -125,21 +126,17 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
            .WithOne()
            .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
 
-        builder.Entity<DeliveryTask>()
-            .Property(dt => dt.Status)
-            .HasConversion<string>()
-            .HasDefaultValue(DeliveryStatus.Pending);
+        builder.Entity<RunnerDeliveryTask>()
+            .HasKey(rdt => new { rdt.DeliveryTaskId, rdt.RunnerId });
+
+        builder.Entity<RunnerDeliveryTask>()
+            .HasOne(rdt => rdt.DeliveryTask)
+            .WithMany(dt => dt.RunnerDeliveryTasks)
+            .HasForeignKey(rdt => rdt.DeliveryTaskId);
 
         builder.Entity<RunnerDeliveryTask>()
             .HasOne(rdt => rdt.Runner)
             .WithMany()
-            .HasForeignKey(rdt => rdt.RunnerId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.Entity<RunnerDeliveryTask>()
-            .HasOne(rdt => rdt.DeliveryTask)
-            .WithMany()
-            .HasForeignKey(rdt => rdt.DeliveryTaskId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .HasForeignKey(rdt => rdt.RunnerId);
     }
 }

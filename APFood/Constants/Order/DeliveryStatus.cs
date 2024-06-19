@@ -1,11 +1,10 @@
-﻿namespace APFood.Constants.Order
+﻿namespace APFood.Constants
 {
-    public enum OrderStatus
+    public enum DeliveryStatus
     {
         Pending,
-        Processing,
-        Ready,
-        Completed,
+        Accepted,
+        Delivered,
         Cancelled
     }
 }

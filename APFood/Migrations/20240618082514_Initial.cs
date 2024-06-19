@@ -209,30 +209,13 @@ namespace APFood.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Runners",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Points = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Runners", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Runners_AspNetUsers_Id",
-                        column: x => x.Id,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Customers",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CartId = table.Column<int>(type: "int", nullable: true)
+                    CartId = table.Column<int>(type: "int", nullable: true),
+                    Points = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -286,7 +269,7 @@ namespace APFood.Migrations
                     CustomerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     DineInOption = table.Column<int>(type: "int", nullable: false),
-                    QueueNumber = table.Column<string>(type: "nvarchar(max)", nullable: true, defaultValueSql: "NEXT VALUE FOR QueueNumberSequence"),
+                    QueueNumber = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR QueueNumberSequence"),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
                 },
                 constraints: table =>
@@ -306,19 +289,23 @@ namespace APFood.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderId = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Pending"),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    OrderId = table.Column<int>(type: "int", nullable: true),
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CustomerId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DeliveryTasks", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_DeliveryTasks_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_DeliveryTasks_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -376,24 +363,25 @@ namespace APFood.Migrations
                 name: "RunnerDeliveryTasks",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     RunnerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DeliveryTaskId = table.Column<int>(type: "int", nullable: false)
+                    DeliveryTaskId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RunnerDeliveryTasks", x => x.Id);
+                    table.PrimaryKey("PK_RunnerDeliveryTasks", x => new { x.DeliveryTaskId, x.RunnerId });
                     table.ForeignKey(
                         name: "FK_RunnerDeliveryTasks_Customers_RunnerId",
                         column: x => x.RunnerId,
                         principalTable: "Customers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_RunnerDeliveryTasks_DeliveryTasks_DeliveryTaskId",
                         column: x => x.DeliveryTaskId,
                         principalTable: "DeliveryTasks",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -453,10 +441,16 @@ namespace APFood.Migrations
                 filter: "[CartId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DeliveryTasks_CustomerId",
+                table: "DeliveryTasks",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DeliveryTasks_OrderId",
                 table: "DeliveryTasks",
                 column: "OrderId",
-                unique: true);
+                unique: true,
+                filter: "[OrderId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_FoodId",
@@ -478,11 +472,6 @@ namespace APFood.Migrations
                 table: "Payments",
                 column: "OrderId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RunnerDeliveryTasks_DeliveryTaskId",
-                table: "RunnerDeliveryTasks",
-                column: "DeliveryTaskId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RunnerDeliveryTasks_RunnerId",
@@ -522,9 +511,6 @@ namespace APFood.Migrations
 
             migrationBuilder.DropTable(
                 name: "RunnerDeliveryTasks");
-
-            migrationBuilder.DropTable(
-                name: "Runners");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
