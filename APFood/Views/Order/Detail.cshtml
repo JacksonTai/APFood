@@ -6,6 +6,14 @@
 @model APFood.Models.Order.OrderDetailViewModel
 
 <div class="container my-5" style="max-width: 40rem">
+    <nav class="mt-5" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-controller="Order" asp-action="Index" asp-route-status="@Model.Status">Orders</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">#@Model.OrderId</li>
+        </ol>
+    </nav>
     <h2 class="mb-3">Order ID: #@Model.OrderId</h2>
     <hr class="mb-4">
     <div class="d-flex justify-content-between lh-sm">
