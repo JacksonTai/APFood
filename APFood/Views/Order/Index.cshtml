@@ -1,8 +1,10 @@
-﻿@using APFood.Constants.Order
+﻿@using APFood.Constants
+@using APFood.Constants.Order
 @model APFood.Models.Order.OrderViewModel
 @{
     ViewData["Title"] = "Order";
     string IsActive(OrderStatus status) => Model.CurrentStatus == status ? "active" : "";
+    var statuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
 }
 
 <div class="container my-5">
@@ -12,31 +14,14 @@
     <div class="card">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="orderTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link @(IsActive(OrderStatus.Pending))" href="/Order?status=@(OrderStatus.Pending)">
-                        Pending <span class="badge bg-primary">@Model.OrderCounts[OrderStatus.Pending]</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(IsActive(OrderStatus.Processing))" href="/Order?status=@(OrderStatus.Processing)">
-                        Processing <span class="badge bg-primary">@Model.OrderCounts[OrderStatus.Processing]</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(IsActive(OrderStatus.Ready))" href="/Order?status=@(OrderStatus.Ready)">
-                        Ready <span class="badge bg-primary">@Model.OrderCounts[OrderStatus.Ready]</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(IsActive(OrderStatus.Completed))" href="/Order?status=@(OrderStatus.Completed)">
-                        Completed <span class="badge bg-primary">@Model.OrderCounts[OrderStatus.Completed]</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(IsActive(OrderStatus.Cancelled))" href="/Order?status=@(OrderStatus.Cancelled)">
-                        Cancelled <span class="badge bg-primary">@Model.OrderCounts[OrderStatus.Cancelled]</span>
-                    </a>
-                </li>
+                @foreach (var status in statuses)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(IsActive(status))" href="/Order?status=@(status)">
+                            @status <span class="badge bg-primary">@Model.OrderCounts[status]</span>
+                        </a>
+                    </li>
+                }
             </ul>
         </div>
         <div class="card-body">
@@ -70,9 +55,17 @@
                                         <td>@order.QueueNumber</td>
                                         <td>@order.DineInOption</td>
                                         <td>@order.TotalPrice.ToString("C")</td>
-                                        <td>
-                                            <a class="btn btn-sm btn-outline-primary" href="/Order/@order.OrderId">View</a>
+                                        <td class="d-flex">
+                                            <a class="btn btn-sm btn-outline-primary me-2" href="/Order/@order.OrderId">View</a>
+                                            @if (order.CanShowReceivedButton)
+                                            {
+                                                <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
+                                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Received</button>
+                                                </form>
+                                            }
                                         </td>
+                                       
                                     </tr>
                                 }
                             </tbody>

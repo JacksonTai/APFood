@@ -1,4 +1,5 @@
-﻿using APFood.Constants.Order;
+﻿using APFood.Constants;
+using APFood.Constants.Order;
 
 namespace APFood.Models.Order
 {
@@ -9,5 +10,7 @@ namespace APFood.Models.Order
         public required DateTime OrderTime { get; set; }
         public required DineInOption DineInOption { get; set; }
         public required decimal TotalPrice { get; set; }
+        public required OrderStatus OrderStatus { get; set; }
+        public required bool CanShowReceivedButton { get; set; }
     }
 }

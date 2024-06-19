@@ -1,4 +1,6 @@
-﻿@{
+﻿@using APFood.Constants
+@using APFood.Constants.Order
+@{
     ViewData["Title"] = "Order #" + @Model.OrderId;
 }
 @model APFood.Models.Order.OrderDetailViewModel
@@ -58,4 +60,11 @@
             <h5>@Model.OrderSummary.Total.ToString("C")</h5>
         </li>
     </ul>
+    @if (@Model.CanShowReceivedButton)
+    {
+        <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
+            <button type="submit" class="btn btn-success w-100 mt-2">Order Received</button>
+        </form>
+    }
 </div>

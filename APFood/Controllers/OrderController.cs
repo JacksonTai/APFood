@@ -1,4 +1,5 @@
-﻿using APFood.Constants.Order;
+﻿using APFood.Constants;
+using APFood.Constants.Order;
 using APFood.Models.Order;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +20,7 @@ namespace APFood.Controllers
             {
                 OrderList = orders,
                 OrderCounts = orderCounts,
-                 CurrentStatus = status
+                CurrentStatus = status
             });
         }
 
@@ -30,6 +31,13 @@ namespace APFood.Controllers
             return orderDetail == null ? NotFound() : View(orderDetail);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ReceiveOrder(int orderId)
+        {
+            bool orderStatusresult = await _orderService.UpdateOrderStatusAsync(orderId, OrderStatus.Completed);
+            bool deliveryStatusResult = await _orderService.UpdateOrderDeliveryStatusAsync(orderId, DeliveryStatus.Delivered);
+            return (orderStatusresult && deliveryStatusResult) ? Redirect(Request.Headers.Referer.ToString()) : BadRequest();
+        }
 
     }
 }

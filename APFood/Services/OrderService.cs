@@ -1,5 +1,5 @@
-﻿using APFood.Constants.Order;
-using APFood.Controllers;
+﻿using APFood.Constants;
+using APFood.Constants.Order;
 using APFood.Data;
 using APFood.Models.Order;
 using APFood.Services.Contract;
@@ -31,6 +31,44 @@ namespace APFood.Services
             return order;
         }
 
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, OrderStatus newStatus)
+        {
+            Order? order = await _context.Orders.FindAsync(orderId);
+
+            if (order == null)
+            {
+                return false;
+            }
+
+            order.Status = newStatus;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateOrderDeliveryStatusAsync(int orderId, DeliveryStatus newStatus)
+        {
+            DeliveryTask? deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
+            if (deliveryTask == null)
+            {
+                return false;
+            }
+
+            RunnerDeliveryTask? runnerDeliveryTask = await _context.RunnerDeliveryTasks
+                .Where(rdt => rdt.Status == DeliveryStatus.Accepted)
+                .FirstOrDefaultAsync(rdt => rdt.DeliveryTaskId == deliveryTask.Id);
+            if (runnerDeliveryTask == null)
+            {
+                return false;
+            }
+            runnerDeliveryTask.Status = newStatus;
+            await _context.SaveChangesAsync();
+
+            deliveryTask.Status = newStatus;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
             return await _context.Orders
@@ -40,17 +78,34 @@ namespace APFood.Services
 
         public async Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status)
         {
-            return await _context.Orders
+            var ordersQuery = _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Food)
                 .Where(o => o.Status == status)
-                .Select(o => new OrderListViewModel
+                .Select(o => new
                 {
-                    OrderId = o.Id,
-                    OrderTime = o.CreatedAt,
-                    QueueNumber = o.QueueNumber,
-                    DineInOption = o.DineInOption,
-                    TotalPrice = o.Items.Sum(item => item.Quantity * item.Food.Price)
-                })
-                .ToListAsync();
+                    o.Id,
+                    o.CreatedAt,
+                    o.QueueNumber,
+                    o.DineInOption,
+                    o.Items,
+                    o.Status,
+                    DeliveryTask = _context.DeliveryTasks
+                                          .FirstOrDefault(dt => dt.OrderId == o.Id)
+                });
+
+            var orders = await ordersQuery.ToListAsync();
+
+            return orders.Select(o => new OrderListViewModel
+            {
+                OrderId = o.Id,
+                OrderTime = o.CreatedAt,
+                QueueNumber = o.QueueNumber,
+                DineInOption = o.DineInOption,
+                TotalPrice = o.Items.Sum(item => item.Quantity * item.Food.Price),
+                OrderStatus = o.Status,
+                CanShowReceivedButton = CanShowReceivedButton(o.Status, o.DeliveryTask?.Status)
+            }).ToList();
         }
 
         public async Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync()
@@ -76,7 +131,7 @@ namespace APFood.Services
         }
 
         public async Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId)
-        {            
+        {
             Order? order = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(oi => oi.Food)
@@ -92,6 +147,17 @@ namespace APFood.Services
                 .Select(p => p.DeliveryFee)
                 .FirstOrDefaultAsync();
 
+            DeliveryTask? deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
+
+            RunnerDeliveryTask? runnerDeliveryTask = deliveryTask != null
+                ? await _context.RunnerDeliveryTasks
+                    .Include(rdt => rdt.Runner)
+                    .Where(rdt => rdt.DeliveryTaskId == deliveryTask.Id)
+                    .Where(rdt => rdt.Status != DeliveryStatus.Cancelled)
+                    .FirstOrDefaultAsync()
+                : null;
+
             OrderDetailViewModel orderDetailViewModel = new()
             {
                 OrderId = order.Id,
@@ -106,29 +172,20 @@ namespace APFood.Services
                     DeliveryFee = deliveryFee,
                     RunnerPointsRedeemed = 0,
                     Total = order.Items.Sum(item => item.Quantity * item.Food.Price) + deliveryFee
-                }
+                },
+                DeliveryLocation = deliveryTask?.Location,
+                DeliveryStatus = deliveryTask?.Status,
+                Runner = runnerDeliveryTask?.Runner.FullName,
+                CanShowReceivedButton = CanShowReceivedButton(order.Status, deliveryTask?.Status)
             };
 
-            Data.DeliveryTask? deliveryTask = await _context.DeliveryTasks
-                    .FirstOrDefaultAsync(o => o.Id == orderId);
-
-            if (deliveryTask != null)
-            {
-                orderDetailViewModel.DeliveryLocation = deliveryTask.Location;
-                orderDetailViewModel.DeliveryStatus = deliveryTask.Status;
-
-                RunnerDeliveryTask? runnerDeliveryTasks = await _context.RunnerDeliveryTasks
-                       .Include(rdt => rdt.Runner)
-                       .Where(rdt => rdt.DeliveryTaskId == deliveryTask.Id)
-                       .Where(rdt => rdt.Status != Constants.DeliveryStatus.Cancelled)
-                       .FirstOrDefaultAsync();
-
-                if (runnerDeliveryTasks != null)
-                {
-                    orderDetailViewModel.Runner = runnerDeliveryTasks.Runner.FullName;
-                }
-            }
             return orderDetailViewModel;
+        }
+
+        private static bool CanShowReceivedButton(OrderStatus orderStatus, DeliveryStatus? deliveryStatus)
+        {
+            return orderStatus == OrderStatus.Ready &&
+                   (deliveryStatus == DeliveryStatus.Accepted || deliveryStatus == null);
         }
     }
 }

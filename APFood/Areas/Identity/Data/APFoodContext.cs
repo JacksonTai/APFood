@@ -127,7 +127,7 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
            .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
 
         builder.Entity<RunnerDeliveryTask>()
-            .HasKey(rdt => new { rdt.DeliveryTaskId, rdt.RunnerId, rdt.Status });
+            .HasKey(rdt => new { rdt.DeliveryTaskId, rdt.RunnerId });
 
         builder.Entity<RunnerDeliveryTask>()
             .HasOne(rdt => rdt.DeliveryTask)

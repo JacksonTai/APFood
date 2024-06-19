@@ -7,7 +7,7 @@ namespace APFood.Data
     {
         public required string RunnerId { get; set; }
         public int DeliveryTaskId { get; set; }
-        public required DeliveryStatus Status { get; set; } = DeliveryStatus.Pending;
+        public required DeliveryStatus Status { get; set; } = DeliveryStatus.Accepted;
 
         public required Customer Runner { get; set; }
         public required DeliveryTask DeliveryTask { get; set; }
