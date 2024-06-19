@@ -1,5 +1,4 @@
-﻿using APFood.Constants;
-using APFood.Constants.Order;
+﻿using APFood.Constants.Order;
 
 namespace APFood.Models.Order
 {
@@ -12,5 +11,6 @@ namespace APFood.Models.Order
         public required decimal TotalPrice { get; set; }
         public required OrderStatus OrderStatus { get; set; }
         public required bool CanShowReceivedButton { get; set; }
+        public required bool CanShowCancelButton { get; set; }
     }
 }

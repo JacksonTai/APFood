@@ -31,12 +31,18 @@ namespace APFood.Controllers
             return orderDetail == null ? NotFound() : View(orderDetail);
         }
 
-        [HttpPost]
+        [HttpPost("ReceiveOrder")]
         public async Task<IActionResult> ReceiveOrder(int orderId)
         {
-            bool orderStatusresult = await _orderService.UpdateOrderStatusAsync(orderId, OrderStatus.Completed);
-            bool deliveryStatusResult = await _orderService.UpdateOrderDeliveryStatusAsync(orderId, DeliveryStatus.Delivered);
-            return (orderStatusresult && deliveryStatusResult) ? Redirect(Request.Headers.Referer.ToString()) : BadRequest();
+            bool result = await _orderService.ReceiveOrder(orderId);
+            return result ? Redirect(Request.Headers.Referer.ToString()) : BadRequest();
+        }
+
+        [HttpPost("CancelOrder")]
+        public async Task<IActionResult> CancelOrder(int orderId)
+        {
+            bool result = await _orderService.CancelOrder(orderId);
+            return result ? Redirect(Request.Headers.Referer.ToString()) : BadRequest();
         }
 
     }

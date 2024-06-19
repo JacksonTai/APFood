@@ -64,8 +64,14 @@
                                                     <button type="submit" class="btn btn-sm btn-outline-success">Received</button>
                                                 </form>
                                             }
+                                            @if (@order.CanShowCancelButton)
+                                            {
+                                                <form method="post" asp-controller="Order" asp-action="CancelOrder">
+                                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Order</button>
+                                                </form>
+                                            }
                                         </td>
-                                       
                                     </tr>
                                 }
                             </tbody>

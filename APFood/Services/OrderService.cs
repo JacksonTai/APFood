@@ -54,19 +54,42 @@ namespace APFood.Services
                 return false;
             }
 
-            RunnerDeliveryTask? runnerDeliveryTask = await _context.RunnerDeliveryTasks
-                .Where(rdt => rdt.Status == DeliveryStatus.Accepted)
-                .FirstOrDefaultAsync(rdt => rdt.DeliveryTaskId == deliveryTask.Id);
-            if (runnerDeliveryTask == null)
+            if (newStatus == DeliveryStatus.Delivered)
             {
-                return false;
+                RunnerDeliveryTask? runnerDeliveryTask = await _context.RunnerDeliveryTasks
+                    .Where(rdt => rdt.Status == DeliveryStatus.Accepted)
+                    .FirstOrDefaultAsync(rdt => rdt.DeliveryTaskId == deliveryTask.Id);
+                if (runnerDeliveryTask == null)
+                {
+                    return false;
+                }
+                runnerDeliveryTask.Status = newStatus;
+                await _context.SaveChangesAsync();
             }
-            runnerDeliveryTask.Status = newStatus;
-            await _context.SaveChangesAsync();
 
             deliveryTask.Status = newStatus;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> ReceiveOrder(int orderId)
+        {
+            return await UpdateOrderStatusAsync(orderId, OrderStatus.Completed);
+        }
+
+        public async Task<bool> CancelOrder(int orderId)
+        {
+            DeliveryTask? deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
+
+            if (deliveryTask != null)
+            {
+               bool result = await UpdateOrderDeliveryStatusAsync(orderId, DeliveryStatus.Cancelled);
+               if (!result)
+                {
+                }
+            }
+            return await UpdateOrderStatusAsync(orderId, OrderStatus.Cancelled);
         }
 
         public async Task<Order?> GetOrderByIdAsync(int orderId)
@@ -104,7 +127,8 @@ namespace APFood.Services
                 DineInOption = o.DineInOption,
                 TotalPrice = o.Items.Sum(item => item.Quantity * item.Food.Price),
                 OrderStatus = o.Status,
-                CanShowReceivedButton = CanShowReceivedButton(o.Status, o.DeliveryTask?.Status)
+                CanShowReceivedButton = CanShowReceivedButton(o.Status, o.DeliveryTask?.Status),
+                CanShowCancelButton = o.Status == OrderStatus.Pending
             }).ToList();
         }
 
@@ -176,7 +200,8 @@ namespace APFood.Services
                 DeliveryLocation = deliveryTask?.Location,
                 DeliveryStatus = deliveryTask?.Status,
                 Runner = runnerDeliveryTask?.Runner.FullName,
-                CanShowReceivedButton = CanShowReceivedButton(order.Status, deliveryTask?.Status)
+                CanShowReceivedButton = CanShowReceivedButton(order.Status, deliveryTask?.Status),
+                CanShowCancelButton = order.Status == OrderStatus.Pending
             };
 
             return orderDetailViewModel;
@@ -185,7 +210,7 @@ namespace APFood.Services
         private static bool CanShowReceivedButton(OrderStatus orderStatus, DeliveryStatus? deliveryStatus)
         {
             return orderStatus == OrderStatus.Ready &&
-                   (deliveryStatus == DeliveryStatus.Accepted || deliveryStatus == null);
+                   (deliveryStatus != null && deliveryStatus == DeliveryStatus.Delivered);
         }
     }
 }

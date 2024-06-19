@@ -27,7 +27,6 @@
         </div>
     </div>
     @if (!string.IsNullOrEmpty(Model.DeliveryLocation) || 
-         !string.IsNullOrEmpty(Model.Runner) || 
          !string.IsNullOrEmpty(Model.DeliveryStatus.ToString()))
     {
         <div>
@@ -35,7 +34,7 @@
             <h5 class="mb-3">Delivery Information</h5>
             <div>
                 <p>Location: @Model.DeliveryLocation</p>
-                <p>Runner: @Model.Runner</p>
+                <p>Runner: @(string.IsNullOrEmpty(Model.Runner) ? "-" : Model.Runner)</p>
                 <p>Status: <span class="badge bg-primary">@Model.DeliveryStatus</span></p>
             </div>
         </div>
@@ -73,6 +72,13 @@
         <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
             <input type="hidden" name="orderId" value="@Model.OrderId" />
             <button type="submit" class="btn btn-success w-100 mt-2">Order Received</button>
+        </form>
+    }
+    @if (@Model.CanShowCancelButton)
+    {
+        <form method="post" asp-controller="Order" asp-action="CancelOrder">
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
+            <button type="submit" class="btn btn-danger w-100 mt-2">Cancel Order</button>
         </form>
     }
 </div>
