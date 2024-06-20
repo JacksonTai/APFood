@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dineInOption.addEventListener('change', toggleLocationFormField);
     toggleLocationFormField();
 
-    const runnerPoints = parseInt(document.getElementById("runner-points").value, 10);
+    const runnerPoints = parseInt(document.getElementById("runner-points").textContent, 10);
     const runnerPointsCheckbox = document.getElementById("is-using-runner-points");
     let isUsingRunnerPoints = $('#is-using-runner-points').prop('checked');
 
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
          runnerPointsContainer.classList.add('d-none');
     }
     if (runnerPoints === 0) {
-        console.log("No runner points available")
         runnerPointsCheckbox.disabled = true;
         $('#is-using-runner-points').prop('checked', false);
         runnerPointsContainer.classList.remove('d-flex');
@@ -41,7 +40,9 @@ const updateQuantity = (itemId, delta) => {
         data: JSON.stringify(updateQuantityRequest),
         success:  (response) =>  {
             $(`#item-price-${itemId}`).text(`RM ${response.itemPrice}`);
+            $('#runner-points').text(`${response.runnerPointsRedeemed}`);
             $('#subtotal').text(`RM ${response.subtotal}`);
+            $('#runner-points-redeemed').text(`- RM ${response.runnerPointsRedeemed}`);
             $('#total').text(`RM ${response.total}`);
         },
         error:  (xhr, _status, _error) => {
@@ -56,6 +57,7 @@ const removeItem = (itemId) => {
         method: "POST",
         data: { itemId: itemId },
         success: (response) => {
+            $('#runner-points').text(`${response.runnerPointsRedeemed}`);
             $(`#subtotal`).text(`RM ${response.subtotal}`);
             $('#total').text(`RM ${response.total}`);
             window.location.reload();
@@ -97,6 +99,8 @@ const updateDineInOption = () => {
         url: "/Cart/UpdateDineInOption",
         data: { dineInOption },
         success: (response) => {
+            $('#runner-points').text(`${response.runnerPointsRedeemed}`);
+            $('#runner-points-redeemed').text(`- RM ${response.runnerPointsRedeemed}`);
             $('#delivery-fee').text(`RM ${response.deliveryFee}`);
             $('#total').text(`RM ${response.total}`);
         },

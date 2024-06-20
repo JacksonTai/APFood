@@ -7,7 +7,6 @@ namespace APFood.Models.Cart
     {
         public required List<CartItem> CartItems { get; set; }
         public required OrderSummaryModel OrderSummary { get; set; }
-        public required decimal RunnerPoints { get; set; }
         public required CartFormModel CartForm;
     }
 }

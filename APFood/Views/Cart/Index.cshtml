@@ -86,7 +86,6 @@
                                                 </select>
                                                 <span asp-validation-for="CartForm.DineInOption" class="text-danger"></span>
                                             </div>
-
                                             <div id="location-form-field" class="mb-3">
                                                 <label class="mb-2" for="location">Location</label>
                                                 <input class="form-control" id="location" asp-for="CartForm.Location"
@@ -98,9 +97,10 @@
                                                     <input class="form-check-input" type="checkbox" 
                                                            asp-for="CartForm.IsUsingRunnerPoints" 
                                                            id="is-using-runner-points" onchange="updateRunnerPoints()">
-                                                    <input type="hidden" value="@Model.RunnerPoints" id="runner-points" />
                                                     <label class="form-check-label" for="is-using-runner-points">
-                                                        Redeem @Model.RunnerPoints Runner Point
+                                                        Redeem 
+                                                        <span id="runner-points">@Model.OrderSummary.RunnerPointsRedeemed</span>
+                                                        Runner Point
                                                     </label>
                                                 </div>
                                             </div>

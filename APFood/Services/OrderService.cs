@@ -1,6 +1,7 @@
 ﻿using APFood.Constants;
 using APFood.Constants.Order;
 using APFood.Data;
+using APFood.Models.Cart;
 using APFood.Models.Order;
 using APFood.Services.Contract;
 using Microsoft.EntityFrameworkCore;
@@ -113,11 +114,16 @@ namespace APFood.Services
                     o.DineInOption,
                     o.Items,
                     o.Status,
+                    TotalPaid = _context.Payments
+                        .Where(p => p.OrderId == o.Id)
+                        .Select(p => p.Total)
+                        .FirstOrDefault(),
                     DeliveryTask = _context.DeliveryTasks
-                                          .FirstOrDefault(dt => dt.OrderId == o.Id)
+                        .FirstOrDefault(dt => dt.OrderId == o.Id)
                 });
 
             var orders = await ordersQuery.ToListAsync();
+
 
             return orders.Select(o => new OrderListViewModel
             {
@@ -125,7 +131,7 @@ namespace APFood.Services
                 OrderTime = o.CreatedAt,
                 QueueNumber = o.QueueNumber,
                 DineInOption = o.DineInOption,
-                TotalPrice = o.Items.Sum(item => item.Quantity * item.Food.Price),
+                TotalPaid = o.TotalPaid,
                 OrderStatus = o.Status,
                 CanShowReceivedButton = CanShowReceivedButton(o.Status, o.DeliveryTask?.Status),
                 CanShowCancelButton = o.Status == OrderStatus.Pending
@@ -182,6 +188,9 @@ namespace APFood.Services
                     .FirstOrDefaultAsync()
                 : null;
 
+            Payment? payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId)
+                ?? throw new Exception("Payment not found");
+
             OrderDetailViewModel orderDetailViewModel = new()
             {
                 OrderId = order.Id,
@@ -193,9 +202,9 @@ namespace APFood.Services
                 OrderSummary = new OrderSummaryModel
                 {
                     Subtotal = order.Items.Sum(item => item.Quantity * item.Food.Price),
-                    DeliveryFee = deliveryFee,
-                    RunnerPointsRedeemed = 0,
-                    Total = order.Items.Sum(item => item.Quantity * item.Food.Price) + deliveryFee
+                    DeliveryFee = payment.DeliveryFee,
+                    RunnerPointsRedeemed = payment.RunnerPointsUsed,
+                    Total = payment.Total
                 },
                 DeliveryLocation = deliveryTask?.Location,
                 DeliveryStatus = deliveryTask?.Status,
@@ -205,6 +214,21 @@ namespace APFood.Services
             };
 
             return orderDetailViewModel;
+        }
+
+        public OrderSummaryModel CalculateOrderSummary(Cart cart, CartFormModel cartForm)
+        {
+            decimal subtotal = cart.Items.Sum(ci => ci.Food.Price * ci.Quantity);
+            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
+            decimal runnerPointsRedeemed = Math.Min(cart.Customer.Points, deliveryFee + subtotal);
+            decimal total = Math.Max(subtotal + deliveryFee - (cartForm.IsUsingRunnerPoints ? runnerPointsRedeemed : 0), 0);
+            return new OrderSummaryModel
+            {
+                Subtotal = subtotal,
+                DeliveryFee = deliveryFee,
+                RunnerPointsRedeemed = runnerPointsRedeemed,
+                Total = total
+            };
         }
 
         private static bool CanShowReceivedButton(OrderStatus orderStatus, DeliveryStatus? deliveryStatus)

@@ -25,26 +25,21 @@ namespace APFood.Services
         private readonly IDeliveryTaskService _deliveryTaskService = deliveryTaskService;
         private readonly ILogger<PaymentService> _logger = logger;
 
-        public async Task<Payment> CreatePayment(Order order, bool IsUsingRunnerPoints)
+        public async Task<Payment> CreatePayment(Order order, CartFormModel cartForm)
         {
             try
             {
-                decimal subtotal = order.Items.Sum(item => item.Food.Price * item.Quantity);
-                decimal deliveryFee = order.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-                decimal redeemedRunnerPoints = IsUsingRunnerPoints ? order.Customer.Points : 0;
-                decimal total = subtotal + deliveryFee - redeemedRunnerPoints;
-
+                Cart cart = await _cartService.GetCartAsync(order.CustomerId) ?? throw new Exception("Cart not found");
+                OrderSummaryModel orderSummary = _orderService.CalculateOrderSummary(cart, cartForm);
                 Payment payment = new()
                 {
                     OrderId = order.Id,
                     Order = order,
-                    Subtotal = subtotal,
-                    DeliveryFee = deliveryFee,
-                    RunnerPointsUsed = redeemedRunnerPoints,
-                    Total = total,
+                    Subtotal = orderSummary.Subtotal,
+                    DeliveryFee = orderSummary.DeliveryFee,
+                    RunnerPointsUsed = orderSummary.RunnerPointsRedeemed,
+                    Total = orderSummary.Total,
                 };
-
-                ArgumentNullException.ThrowIfNull(payment);
                 _context.Payments.Add(payment);
                 await _context.SaveChangesAsync();
                 return payment;
@@ -58,27 +53,14 @@ namespace APFood.Services
 
         public async Task<PaymentViewModel> GetPaymentViewAsync(string userId, PaymentFormModel paymentForm)
         {
+            Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) 
                 ?? throw new Exception("Cart form not found");
-
-            List<CartItem> cartItems = await _cartService.GetCartItemsAsync(userId);
-            Customer customer = await _context.Customers.FindAsync(userId) ?? throw new Exception("User not found");
-
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal subtotal = await _cartService.GetCartTotalAsync(userId);
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? customer.Points : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
-
+ 
             return new PaymentViewModel
             {
-                CartItems = cartItems,
-                OrderSummary = new OrderSummaryModel
-                {
-                    Subtotal = subtotal,
-                    DeliveryFee = deliveryFee,
-                    RunnerPointsRedeemed = runnerPointsRedeemed,
-                    Total = total
-                },
+                CartItems = await _cartService.GetCartItemsAsync(userId),
+                OrderSummary = _orderService.CalculateOrderSummary(cart, cartForm),
                 PaymentForm = paymentForm,
                 IsUsingRunnerPoints = cartForm.IsUsingRunnerPoints
             };
@@ -91,24 +73,22 @@ namespace APFood.Services
 
         public async Task<PaymentSuccessViewModel> ProcessPaymentAsync(string userId, PaymentFormModel paymentFormModel)
         {
+            Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Failed to retrieve the cart.");
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) 
                 ?? throw new Exception("Cart form not found");
 
-            DineInOption dineInOption = cartForm.DineInOption;
-            string? location = cartForm.Location;
-
-            Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Failed to retrieve the cart.");
-            Order createdOrder = await _orderService.CreateOrder(cart, dineInOption);
-            
-            if (dineInOption == DineInOption.Delivery && !string.IsNullOrEmpty(location))
+            Order createdOrder = await _orderService.CreateOrder(cart, cartForm.DineInOption);
+            if (cartForm.DineInOption == DineInOption.Delivery && !string.IsNullOrEmpty(cartForm.Location))
             {
-                await _deliveryTaskService.CreateDeliveryTask(createdOrder, location);
+                await _deliveryTaskService.CreateDeliveryTask(createdOrder, cartForm.Location);
             }
-
-            await CreatePayment(createdOrder, cartForm.IsUsingRunnerPoints);
+            Payment createdPayment = await CreatePayment(createdOrder, cartForm);
+            Customer customer = await _context.Customers.FindAsync(userId) ?? throw new Exception("User not found");
+            customer.Points -= createdPayment.RunnerPointsUsed;
+            await _context.SaveChangesAsync();
             await _cartService.ClearCartAsync(userId);
             _sessionManager.Remove(typeof(CartFormModel).Name);
-            
+
             return new PaymentSuccessViewModel
             {
                 OrderId = createdOrder.Id,

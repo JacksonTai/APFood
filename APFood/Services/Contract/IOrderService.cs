@@ -1,6 +1,7 @@
 ﻿using APFood.Constants;
 using APFood.Constants.Order;
 using APFood.Data;
+using APFood.Models.Cart;
 using APFood.Models.Order;
 
 namespace APFood.Services.Contract
@@ -16,5 +17,6 @@ namespace APFood.Services.Contract
         Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status);
         Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync();
         Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId);
+        OrderSummaryModel CalculateOrderSummary(Cart cart, CartFormModel cartForm);
     }
 }

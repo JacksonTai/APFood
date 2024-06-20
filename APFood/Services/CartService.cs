@@ -1,6 +1,5 @@
 ﻿using APFood.Areas.Identity.Data;
 using APFood.Constants.Order;
-using APFood.Constants;
 using APFood.Data;
 using APFood.Models.Cart;
 using APFood.Models.Order;
@@ -11,10 +10,12 @@ namespace APFood.Services
 {
     public class CartService(
         APFoodContext context,
+        IOrderService orderService,
         SessionManager sessionManager
         ) : ICartService
     {
         private readonly APFoodContext _context = context;
+        private readonly IOrderService _orderService = orderService;
         private readonly SessionManager _sessionManager = sessionManager;
 
         public async Task CreateCustomerCart(Customer customer)
@@ -52,9 +53,9 @@ namespace APFood.Services
             }
         }
 
-        public async Task<CartViewModel> CheckoutCart(string userId, CartFormModel cartForm)
+        public async Task<CartViewModel> CheckoutCart(Cart cart, CartFormModel cartForm)
         {
-            CartViewModel cartView = await GetCartViewAsync(userId, cartForm);
+            CartViewModel cartView = await GetCartViewAsync(cart, cartForm);
             if (cartForm.DineInOption == DineInOption.Delivery && string.IsNullOrWhiteSpace(cartForm.Location))
             {
                 throw new ArgumentException("Location is required for delivery");
@@ -63,35 +64,20 @@ namespace APFood.Services
             return cartView;
         }   
 
-        public async Task<CartViewModel> GetCartViewAsync(string userId, CartFormModel cartForm)
+        public async Task<CartViewModel> GetCartViewAsync(Cart cart, CartFormModel cartForm)
         {
-            Customer customer = await _context.Customers.FindAsync(userId) ?? throw new Exception("User not found");
-            decimal subtotal = await GetCartTotalAsync(userId);
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? customer.Points : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
-
-            cartForm.IsUsingRunnerPoints = cartForm.IsUsingRunnerPoints;
-
             return new CartViewModel
             {
-                CartItems = await GetCartItemsAsync(userId),
-                OrderSummary = new OrderSummaryModel
-                {
-                    Subtotal = subtotal,
-                    DeliveryFee = deliveryFee,
-                    RunnerPointsRedeemed = runnerPointsRedeemed,
-                    Total = total
-                },
-                RunnerPoints = customer.Points,
+                CartItems = await GetCartItemsAsync(cart.CustomerId),
+                OrderSummary = _orderService.CalculateOrderSummary(cart, cartForm),
                 CartForm = cartForm
             };
         }
 
-        public async Task<CartViewModel> GetCartViewAsync(string userId)
+        public async Task<CartViewModel> GetCartViewAsync(Cart cart)
         {
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) ?? new CartFormModel();
-            return await GetCartViewAsync(userId, cartForm);
+            return await GetCartViewAsync(cart, cartForm);
         }
 
         public async Task<Cart?> GetCartAsync(string userId)
@@ -140,45 +126,46 @@ namespace APFood.Services
             await _context.SaveChangesAsync();
             
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) ?? new CartFormModel();
-
-            decimal subtotal = await GetCartTotalAsync(cart.CustomerId);
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? cart.Customer.Points : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
+            OrderSummaryModel orderSummary = _orderService.CalculateOrderSummary(cart, cartForm);
             decimal itemPrice = cartItem.Food.Price * cartItem.Quantity;
 
-            return new UpdateQuantityResponseModel { ItemPrice = itemPrice, Subtotal = subtotal, Total = total };
+            return new UpdateQuantityResponseModel {
+                ItemPrice = itemPrice,
+                Subtotal = orderSummary.Subtotal,
+                Total = orderSummary.Total,
+                RunnerPointsRedeemed = orderSummary.RunnerPointsRedeemed
+            };
         }
 
-        public async Task<UpdateRunnerPointsResponseModel> UpdateRunnerPointsAsync(Cart cart, bool isUsingRunnerPoints)
+        public UpdateRunnerPointsResponseModel UpdateRunnerPoints(Cart cart, bool isUsingRunnerPoints)
         {
-            string userId = cart.CustomerId;
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) ?? new CartFormModel();
-
             cartForm.IsUsingRunnerPoints = isUsingRunnerPoints;
             _sessionManager.Set(typeof(CartFormModel).Name, cartForm);
 
-            decimal subtotal = await GetCartTotalAsync(userId);
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? cart.Customer.Points : 0;
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
+            OrderSummaryModel orderSummary = _orderService.CalculateOrderSummary(cart, cartForm);
 
-            return new UpdateRunnerPointsResponseModel { RunnerPointsRedeemed = runnerPointsRedeemed, Total = total };
-        }   
+            return new UpdateRunnerPointsResponseModel
+            {
+                RunnerPointsRedeemed = orderSummary.RunnerPointsRedeemed,
+                Total = orderSummary.Total
+            };
+        }
 
-        public async Task<UpdateDiningOptionResponseModel> UpdateDiningOption(Cart cart, DineInOption dineInOption)
+        public UpdateDiningOptionResponseModel UpdateDiningOption(Cart cart, DineInOption dineInOption)
         {
-            string userId = cart.CustomerId;
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) ?? new CartFormModel();
             cartForm.DineInOption = dineInOption;
             _sessionManager.Set(typeof(CartFormModel).Name, cartForm);
 
-            decimal subtotal = await GetCartTotalAsync(userId);
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? cart.Customer.Points : 0;
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
+            OrderSummaryModel orderSummary = _orderService.CalculateOrderSummary(cart, cartForm);
 
-            return new UpdateDiningOptionResponseModel { DeliveryFee = deliveryFee, Total = total };
+            return new UpdateDiningOptionResponseModel
+            {
+                DeliveryFee = orderSummary.DeliveryFee,
+                Total = orderSummary.Total,
+                RunnerPointsRedeemed = orderSummary.RunnerPointsRedeemed
+            };
         }
 
         public async Task<RemoveItemResponseModel> RemoveItemAsync(Cart cart, int itemId)
@@ -187,16 +174,14 @@ namespace APFood.Services
             _context.CartItems.Remove(cartItem);
             await _context.SaveChangesAsync();
 
-            string userId = cart.CustomerId;
             CartFormModel cartForm = _sessionManager.Get<CartFormModel>(typeof(CartFormModel).Name) ?? new CartFormModel();
-            Customer customer = await _context.Customers.FindAsync(userId) ?? throw new Exception("User not found");
+            OrderSummaryModel orderSummary = _orderService.CalculateOrderSummary(cart, cartForm);
 
-            decimal subtotal = await GetCartTotalAsync(userId);
-            decimal runnerPointsRedeemed = cartForm.IsUsingRunnerPoints ? customer.Points : 0;
-            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
-            decimal total = subtotal + deliveryFee - runnerPointsRedeemed;
-
-            return new RemoveItemResponseModel { Subtotal = subtotal, Total = total };
+            return new RemoveItemResponseModel { 
+                Subtotal = orderSummary.Subtotal, 
+                Total = orderSummary.Total,
+                RunnerPointsRedeemed = orderSummary.RunnerPointsRedeemed
+            };
         }
 
         public async Task ClearCartAsync(string userId)
@@ -207,15 +192,6 @@ namespace APFood.Services
             _context.CartItems.RemoveRange(cart.Items);
             await _context.SaveChangesAsync();
         }
-
-        public async Task<decimal> GetCartTotalAsync(string userId)
-        {
-            Cart? cart = await _context.Carts
-                .Include(c => c.Items)
-                    .ThenInclude(ci => ci.Food)
-                .FirstOrDefaultAsync(c => c.CustomerId == userId);
-            return cart?.Items.Sum(ci => ci.Food.Price * ci.Quantity) ?? 0;
-        }
-
+ 
     }
 }

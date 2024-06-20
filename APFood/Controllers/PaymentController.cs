@@ -1,10 +1,4 @@
-﻿using APFood.Areas.Identity.Data;
-using APFood.Constants;
-using APFood.Constants.Order;
-using APFood.Constants.Payment;
-using APFood.Data;
-using APFood.Models.Cart;
-using APFood.Models.Order;
+﻿using APFood.Constants;
 using APFood.Models.Payment;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;

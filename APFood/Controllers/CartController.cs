@@ -5,7 +5,6 @@ using APFood.Models.Cart;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using System.Security.Claims;
 
 namespace APFood.Controllers
@@ -22,14 +21,16 @@ namespace APFood.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            string userId = GetUserId();
             try
             {
-                CartViewModel cartView = await _cartService.GetCartViewAsync(GetUserId());
+                Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
+                CartViewModel cartView = await _cartService.GetCartViewAsync(cart);
                 return View(cartView);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while loading the cart for user {UserId}", GetUserId());
+                _logger.LogError(ex, "An error occurred while loading the cart for user {UserId}", userId);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
             }
         }
@@ -38,15 +39,17 @@ namespace APFood.Controllers
         public async Task<IActionResult> Index(CartFormModel cartForm)
         {
             string userId = GetUserId();
+            Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
             try
             {
-                CartViewModel cartView = await _cartService.CheckoutCart(userId, cartForm);
+                CartViewModel cartView = await _cartService.CheckoutCart(cart, cartForm);
                 return RedirectToAction("Index", "Payment");
             }
             catch (ArgumentException ex)
             {
                 ModelState.AddModelError("Location", ex.Message);
-                return View("Index", await _cartService.GetCartViewAsync(userId, cartForm));
+
+                return View("Index", await _cartService.GetCartViewAsync(cart, cartForm));
             }
             catch (Exception ex)
             {
@@ -109,7 +112,7 @@ namespace APFood.Controllers
             try
             {
                 Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
-                return Json(await _cartService.UpdateRunnerPointsAsync(cart, isUsingRunnerPoints));
+                return Json(_cartService.UpdateRunnerPoints(cart, isUsingRunnerPoints));
             }
             catch (Exception ex)
             {
@@ -126,7 +129,7 @@ namespace APFood.Controllers
             try
             {
                 Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
-                return Json(await _cartService.UpdateDiningOption(cart, dineInOption));
+                return Json(_cartService.UpdateDiningOption(cart, dineInOption));
             }
             catch (Exception ex)
             {

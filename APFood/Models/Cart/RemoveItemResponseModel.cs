@@ -4,5 +4,6 @@
     {
         public decimal Subtotal { get; set; }
         public decimal Total { get; set; }
+        public decimal RunnerPointsRedeemed { get; set; }
     }
 }
