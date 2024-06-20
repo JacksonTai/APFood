@@ -45,8 +45,8 @@ namespace APFood.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing the payment for user {UserId}", userId);
                 ModelState.AddModelError(string.Empty, "Payment processing failed. Please try again.");
+                _logger.LogError(ex, "An error occurred while processing the payment for user {UserId}", userId);
                 return View("Index", await _paymentService.GetPaymentViewAsync(userId, paymentForm));
             }
         }
