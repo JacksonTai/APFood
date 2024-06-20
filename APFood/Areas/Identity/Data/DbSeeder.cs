@@ -19,7 +19,7 @@ namespace APFood.Areas.Identity.Data
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { UserRole.Customer, UserRole.FoodVendor, UserRole.Admin };
+            string[] roles = [UserRole.Customer, UserRole.FoodVendor, UserRole.Admin];
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))

@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using APFood.Data;
 using APFood.Areas.Identity.Data;
-using APFood.Constants.Order;
-using APFood.Constants;
+using APFood.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("APFoodContextConnection") ?? throw new InvalidOperationException("Connection string 'APFoodContextConnection' not found.");
@@ -23,12 +22,13 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddScoped<APFood.Services.Contract.IRegisterService, APFood.Services.RegisterService>();
-builder.Services.AddScoped<APFood.Services.Contract.ILoginService, APFood.Services.LoginService>();
-builder.Services.AddScoped<APFood.Services.Contract.ICartService, APFood.Services.CartService>();
-builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, APFood.Services.PaymentService>();
-builder.Services.AddScoped<APFood.Services.Contract.IOrderService, APFood.Services.OrderService>();
-builder.Services.AddScoped<APFood.Services.Contract.IDeliveryTaskService, APFood.Services.DeliveryTaskService>();
+builder.Services.AddScoped<APFood.Services.Contract.IRegisterService, RegisterService>();
+builder.Services.AddScoped<APFood.Services.Contract.ILoginService, LoginService>();
+builder.Services.AddScoped<APFood.Services.Contract.ICartService, CartService>();
+builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, PaymentService>();
+builder.Services.AddScoped<APFood.Services.Contract.IOrderService, OrderService>();
+builder.Services.AddScoped<APFood.Services.Contract.IDeliveryTaskService, DeliveryTaskService>();
+builder.Services.AddScoped<SessionManager>();
 
 var app = builder.Build();
 

@@ -16,6 +16,6 @@ namespace APFood.Areas.Identity.Data
 
         [DefaultValue(0.0)]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal? Points { get; set; }
+        public decimal Points { get; set; }
     }
 }

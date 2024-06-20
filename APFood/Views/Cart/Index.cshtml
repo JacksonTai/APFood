@@ -25,8 +25,7 @@
                                                     <th scope="col">Item</th>
                                                     <th scope="col">Unit Price</th>
                                                     <th scope="col">Quantity</th>
-                                                    <th scope="col">Price</th>
-                                                    <th scope="col"></th>
+                                                    <th scope="col" colspan="2">Price</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -46,13 +45,13 @@
                                                         <td class="align-middle">
                                                             <div class="d-flex">
                                                                 <button data-mdb-button-init data-mdb-ripple-init class="btn btn-link px-2"
-                                                                        onclick="changeQuantity(@item.Id, -1)">
+                                                                        onclick="updateQuantity(@item.Id, -1)">
                                                                     <i class="fas fa-minus"></i>
                                                                 </button>
                                                                 <input id="quantity-@item.Id" min="1" name="quantity" value="@item.Quantity" type="number"
                                                                        disabled style="width: 3rem" class="form-control form-control-sm" />
                                                                 <button data-mdb-button-init data-mdb-ripple-init class="btn btn-link px-2"
-                                                                        onclick="changeQuantity(@item.Id, 1)">
+                                                                        onclick="updateQuantity(@item.Id, 1)">
                                                                     <i class="fas fa-plus"></i>
                                                                 </button>
                                                             </div>
@@ -80,25 +79,29 @@
                                         <form asp-controller="Cart" asp-action="Index" method="post">
                                             <div class="mb-3">
                                                 <label class="mb-2" for="dine-in-option">Dine-in Option</label>
-                                                <select class="form-select" id="dine-in-option" asp-for="CheckoutCartRequest.DineInOption"
+                                                <select class="form-select" id="dine-in-option" asp-for="CartForm.DineInOption"
                                                         onchange="updateDineInOption()">
                                                     <option value="Pickup">Pick-up</option>
                                                     <option value="Delivery">Delivery</option>
                                                 </select>
-                                                <span asp-validation-for="CheckoutCartRequest.DineInOption" class="text-danger"></span>
+                                                <span asp-validation-for="CartForm.DineInOption" class="text-danger"></span>
                                             </div>
 
                                             <div id="location-form-field" class="mb-3">
                                                 <label class="mb-2" for="location">Location</label>
-                                                <input class="form-control" id="location" asp-for="CheckoutCartRequest.Location"
+                                                <input class="form-control" id="location" asp-for="CartForm.Location"
                                                        placeholder="e.g. B04-07" />
-                                                <span asp-validation-for="CheckoutCartRequest.Location" class="text-danger"></span>
+                                                <span asp-validation-for="CartForm.Location" class="text-danger"></span>
                                             </div>
                                             <div class="mb-3">
                                                 <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="runner-point" onchange="updateRunnerPoints()"
-                                                           asp-for="CheckoutCartRequest.UseRunnerPoints">
-                                                    <label class="form-check-label" for="runner-point">Redeem 1 Runner Point</label>
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           asp-for="CartForm.IsUsingRunnerPoints" 
+                                                           id="is-using-runner-points" onchange="updateRunnerPoints()">
+                                                    <input type="hidden" value="@Model.RunnerPoints" id="runner-points" />
+                                                    <label class="form-check-label" for="is-using-runner-points">
+                                                        Redeem @Model.RunnerPoints Runner Point
+                                                    </label>
                                                 </div>
                                             </div>
 
@@ -111,12 +114,14 @@
                                                 </li>
                                                 <hr class="mb-4">
                                                 <li class="d-flex justify-content-between">
-                                                    <P>Delivery Fee</P>
-                                                    <P id="delivery-fee">@Model.OrderSummary.DeliveryFee.ToString("C")</P>
+                                                    <p>Delivery Fee</p>
+                                                    <p id="delivery-fee">@Model.OrderSummary.DeliveryFee.ToString("C")</p>
                                                 </li>
-                                                <li class="d-flex justify-content-between">
-                                                    <P>Runner Points Redeemed</P>
-                                                    <P id="runner-points-redeemed">@Model.OrderSummary.RunnerPointsRedeemed.ToString("C")</P>
+                                                <li class="d-flex justify-content-between" id="runner-points-container">
+                                                    <p>Runner Points Redeemed</p>
+                                                    <p id="runner-points-redeemed">
+                                                        - @Model.OrderSummary.RunnerPointsRedeemed.ToString("C")
+                                                    </p>
                                                 </li>
                                                 <hr class="mb-4">
                                                 <li class="d-flex justify-content-between">

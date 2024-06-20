@@ -1,9 +1,9 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const creditCardOption = document.getElementById('credit-card-option');
     const paypalOption = document.getElementById('paypal-option');
     const creditCardForm = document.getElementById('credit-card-form');
 
-    function toggleForm() {
+    const toggleForm = () => {
         if (creditCardOption.checked) {
             creditCardForm.style.display = 'block';
         } else if (paypalOption.checked) {
@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function () {
     creditCardOption.addEventListener('change', toggleForm);
     paypalOption.addEventListener('change', toggleForm);
 
-    // Initial check
     toggleForm();
 
 });
