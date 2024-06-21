@@ -1,6 +1,8 @@
-﻿using APFood.Constants;
+﻿using APFood.Areas.Identity.Data;
+using APFood.Constants;
 using APFood.Constants.Order;
 using APFood.Data;
+using APFood.Models.Cart;
 using APFood.Models.Order;
 using APFood.Services.Contract;
 using Microsoft.EntityFrameworkCore;
@@ -31,72 +33,82 @@ namespace APFood.Services
             return order;
         }
 
-        public async Task<bool> UpdateOrderStatusAsync(int orderId, OrderStatus newStatus)
+        public async Task UpdateOrderStatusAsync(int orderId, OrderStatus newStatus)
         {
-            Order? order = await _context.Orders.FindAsync(orderId);
-
-            if (order == null)
-            {
-                return false;
-            }
-
+            Order order = await _context.Orders.FindAsync(orderId) ?? throw new Exception("Order not found");
             order.Status = newStatus;
             await _context.SaveChangesAsync();
-            return true;
         }
 
-        public async Task<bool> UpdateOrderDeliveryStatusAsync(int orderId, DeliveryStatus newStatus)
+        public async Task UpdateOrderDeliveryStatusAsync(int orderId, DeliveryStatus newStatus)
         {
-            DeliveryTask? deliveryTask = await _context.DeliveryTasks
-                .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
-            if (deliveryTask == null)
-            {
-                return false;
-            }
-
-            if (newStatus == DeliveryStatus.Delivered)
-            {
-                RunnerDeliveryTask? runnerDeliveryTask = await _context.RunnerDeliveryTasks
-                    .Where(rdt => rdt.Status == DeliveryStatus.Accepted)
-                    .FirstOrDefaultAsync(rdt => rdt.DeliveryTaskId == deliveryTask.Id);
-                if (runnerDeliveryTask == null)
-                {
-                    return false;
-                }
-                runnerDeliveryTask.Status = newStatus;
-                await _context.SaveChangesAsync();
-            }
-
+            DeliveryTask deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId) ?? throw new Exception("Delivery task not found");
             deliveryTask.Status = newStatus;
             await _context.SaveChangesAsync();
-            return true;
         }
 
-        public async Task<bool> ReceiveOrder(int orderId)
+        public async Task UpdateOrderRunnerDeliveryStatusAsync(int orderId, DeliveryStatus newStatus)
         {
-            return await UpdateOrderStatusAsync(orderId, OrderStatus.Completed);
+            DeliveryTask deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId) ?? throw new Exception("Delivery task not found");
+
+            RunnerDeliveryTask runnerDeliveryTask = await _context.RunnerDeliveryTasks
+                .Where(rdt => rdt.Status == DeliveryStatus.Accepted)
+                .FirstOrDefaultAsync(rdt => rdt.DeliveryTaskId == deliveryTask.Id) ??
+                    throw new Exception("Runner delivery task not found");
+
+            runnerDeliveryTask.Status = newStatus;
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> CancelOrder(int orderId)
+        public async Task ReceiveOrder(int orderId)
         {
+            await UpdateOrderStatusAsync(orderId, OrderStatus.Completed);
+            DeliveryTask deliveryTask = await _context.DeliveryTasks
+                .Include(dt => dt.RunnerDeliveryTasks)
+                .ThenInclude(rdt => rdt.Runner)
+                .Where(deliveryTask => deliveryTask.Status == DeliveryStatus.Delivered)
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId) ?? throw new Exception("Delivery task not found");
+
+            // Reward runner points
+            List<RunnerDeliveryTask> runnerDeliveryTasks = deliveryTask.RunnerDeliveryTasks
+                ?? throw new Exception("Runner delivery task not found");
+            Customer runner = runnerDeliveryTasks
+                .Where(rdt => rdt.Status == DeliveryStatus.Delivered)
+                .First().Runner;
+            runner.Points += OrderConstants.RunnerPointsPerDelivery;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task CancelOrder(int orderId)
+        {
+            await UpdateOrderStatusAsync(orderId, OrderStatus.Cancelled);
             DeliveryTask? deliveryTask = await _context.DeliveryTasks
+                .Where(deliveryTask => deliveryTask.Status == DeliveryStatus.Pending)
                 .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
-
             if (deliveryTask != null)
             {
-               bool result = await UpdateOrderDeliveryStatusAsync(orderId, DeliveryStatus.Cancelled);
-               if (!result)
-                {
-                }
+                await UpdateOrderDeliveryStatusAsync(orderId, DeliveryStatus.Cancelled);
             }
-            return await UpdateOrderStatusAsync(orderId, OrderStatus.Cancelled);
+
+            // Refund runner points
+            Payment payment = await _context.Payments
+                .Include(p => p.Order)
+                .ThenInclude(o => o.Customer)
+                .FirstOrDefaultAsync(p => p.OrderId == orderId) ?? throw new Exception("Payment not found");
+            if (payment.RunnerPointsUsed > 0)
+            {
+                payment.Order.Customer.Points += payment.RunnerPointsUsed;
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
             return await _context.Orders
-                                 .Include(o => o.Items)
-                                 .FirstOrDefaultAsync(o => o.Id == orderId);
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
         }
 
         public async Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status)
@@ -105,6 +117,7 @@ namespace APFood.Services
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Food)
                 .Where(o => o.Status == status)
+                .OrderByDescending(o => o.CreatedAt)
                 .Select(o => new
                 {
                     o.Id,
@@ -113,8 +126,12 @@ namespace APFood.Services
                     o.DineInOption,
                     o.Items,
                     o.Status,
+                    TotalPaid = _context.Payments
+                        .Where(p => p.OrderId == o.Id)
+                        .Select(p => p.Total)
+                        .FirstOrDefault(),
                     DeliveryTask = _context.DeliveryTasks
-                                          .FirstOrDefault(dt => dt.OrderId == o.Id)
+                        .FirstOrDefault(dt => dt.OrderId == o.Id)
                 });
 
             var orders = await ordersQuery.ToListAsync();
@@ -125,7 +142,7 @@ namespace APFood.Services
                 OrderTime = o.CreatedAt,
                 QueueNumber = o.QueueNumber,
                 DineInOption = o.DineInOption,
-                TotalPrice = o.Items.Sum(item => item.Quantity * item.Food.Price),
+                TotalPaid = o.TotalPaid,
                 OrderStatus = o.Status,
                 CanShowReceivedButton = CanShowReceivedButton(o.Status, o.DeliveryTask?.Status),
                 CanShowCancelButton = o.Status == OrderStatus.Pending
@@ -156,20 +173,13 @@ namespace APFood.Services
 
         public async Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId)
         {
-            Order? order = await _context.Orders
+            Order order = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(oi => oi.Food)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+                .FirstOrDefaultAsync(o => o.Id == orderId) ?? throw new Exception("Order not found");
 
-            if (order == null)
-            {
-                return null;
-            }
-
-            decimal deliveryFee = await _context.Payments
-                .Where(p => p.OrderId == orderId)
-                .Select(p => p.DeliveryFee)
-                .FirstOrDefaultAsync();
+            Payment? payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId)
+              ?? throw new Exception("Payment not found");
 
             DeliveryTask? deliveryTask = await _context.DeliveryTasks
                 .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
@@ -193,9 +203,9 @@ namespace APFood.Services
                 OrderSummary = new OrderSummaryModel
                 {
                     Subtotal = order.Items.Sum(item => item.Quantity * item.Food.Price),
-                    DeliveryFee = deliveryFee,
-                    RunnerPointsRedeemed = 0,
-                    Total = order.Items.Sum(item => item.Quantity * item.Food.Price) + deliveryFee
+                    DeliveryFee = payment.DeliveryFee,
+                    RunnerPointsRedeemed = payment.RunnerPointsUsed,
+                    Total = payment.Total
                 },
                 DeliveryLocation = deliveryTask?.Location,
                 DeliveryStatus = deliveryTask?.Status,
@@ -205,6 +215,21 @@ namespace APFood.Services
             };
 
             return orderDetailViewModel;
+        }
+
+        public OrderSummaryModel CalculateOrderSummary(Cart cart, CartFormModel cartForm)
+        {
+            decimal subtotal = cart.Items.Sum(ci => ci.Food.Price * ci.Quantity);
+            decimal deliveryFee = cartForm.DineInOption == DineInOption.Delivery ? OrderConstants.DeliveryFee : 0;
+            decimal runnerPointsRedeemed = Math.Min(cart.Customer.Points, deliveryFee + subtotal);
+            decimal total = Math.Max(subtotal + deliveryFee - (cartForm.IsUsingRunnerPoints ? runnerPointsRedeemed : 0), 0);
+            return new OrderSummaryModel
+            {
+                Subtotal = subtotal,
+                DeliveryFee = deliveryFee,
+                RunnerPointsRedeemed = runnerPointsRedeemed,
+                Total = total
+            };
         }
 
         private static bool CanShowReceivedButton(OrderStatus orderStatus, DeliveryStatus? deliveryStatus)

@@ -35,10 +35,13 @@
                     <P>Delivery Fee</P>
                     <P>@Model.OrderSummary.DeliveryFee.ToString("C")</P>
                 </li>
-                <li class="d-flex justify-content-between">
-                    <P>Runner Points Redeemed</P>
-                    <P>- RM1.00</P>
-                </li>
+                @if (@Model.IsUsingRunnerPoints)
+                {
+                    <li class="d-flex justify-content-between">
+                        <P>Runner Points Redeemed</P>
+                        <P>- RM @Model.OrderSummary.RunnerPointsRedeemed</P>
+                    </li>
+                }
                 <hr class="mb-4">
                 <li class="d-flex justify-content-between">
                     <h5>Total</h5>
@@ -53,7 +56,7 @@
                     <div class="mb-3">
                         <label>
                             <input type="radio" value="CreditCard" id="credit-card-option"
-                                   asp-for="PaymentFormModel.PaymentMethod" class="card-input-element" checked />
+                                   asp-for="PaymentForm.PaymentMethod" class="card-input-element" checked />
                             <div class="card card-default card-input mb-3">
                                 <div class="p-3 d-flex align-items-center justify-content-between">
                                     <span>Credit/Debit card</span>
@@ -66,7 +69,7 @@
                         </label>
                         <label>
                             <input type="radio" value="PayPal" id="paypal-option"
-                                   asp-for="PaymentFormModel.PaymentMethod" class="card-input-element" />
+                                   asp-for="PaymentForm.PaymentMethod" class="card-input-element" />
                             <div class="card card-default card-input">
                                 <div class="p-3 d-flex align-items-center justify-content-between">
                                     <span>Paypal</span>
@@ -80,19 +83,19 @@
                         <div class="row gy-3 mx-auto">
                             <div class="col-md-6">
                                 <label for="cc-name" class="form-label">Card Holder</label>
-                                <input asp-for="PaymentFormModel.CardHolder" class="form-control" />
-                                <span asp-validation-for="PaymentFormModel.CardHolder" class="text-danger"></span>
+                                <input asp-for="PaymentForm.CardHolder" class="form-control" />
+                                <span asp-validation-for="PaymentForm.CardHolder" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-6">
                                 <label for="cc-number" class="form-label">Card number</label>
-                                <input asp-for="PaymentFormModel.CardNumber" class="form-control" maxlength="16" />
-                                <span asp-validation-for="PaymentFormModel.CardNumber" class="text-danger"></span>
+                                <input asp-for="PaymentForm.CardNumber" class="form-control" maxlength="16" />
+                                <span asp-validation-for="PaymentForm.CardNumber" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-4">
                                 <label for="cc-expiration" class="form-label">Expiration</label>
-                                <select asp-for="PaymentFormModel.ExpirationMonth" class="form-control">
+                                <select asp-for="PaymentForm.ExpirationMonth" class="form-control">
                                     <option selected disabled>Month</option>
                                     <option value='01'>January</option>
                                     <option value='02'>February</option>
@@ -107,26 +110,26 @@
                                     <option value='11'>November</option>
                                     <option value='12'>December</option>
                                 </select>
-                                <span asp-validation-for="PaymentFormModel.ExpirationMonth" class="text-danger"></span>
+                                <span asp-validation-for="PaymentForm.ExpirationMonth" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="d-none d-md-block form-label">&nbsp;</label>
-                                <select asp-for="PaymentFormModel.ExpirationYear" class="form-control">
+                                <select asp-for="PaymentForm.ExpirationYear" class="form-control">
                                     <option selected disabled value="">Year</option>
                                     @foreach (var year in @Model.YearRange)
                                     {
                                         <option value="@year.ToString()">@year</option>
                                     }
                                 </select>
-                                <span asp-validation-for="PaymentFormModel.ExpirationYear" class="text-danger"></span>
+                                <span asp-validation-for="PaymentForm.ExpirationYear" class="text-danger"></span>
                             </div>
 
                             <div class="col-md-4">
                                 <label for="cc-cvv" class="form-label">CVV</label>
-                                <input asp-for="PaymentFormModel.CVV" type="text" id="cc-cvv" maxlength="3"
+                                <input asp-for="PaymentForm.CVV" type="text" id="cc-cvv" maxlength="3"
                                        class="form-control">
-                                <span asp-validation-for="PaymentFormModel.CVV" class="text-danger"></span>
+                                <span asp-validation-for="PaymentForm.CVV" class="text-danger"></span>
                             </div>
                         </div>
                     </div>

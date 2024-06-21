@@ -1,4 +1,6 @@
-﻿namespace APFood.Models.Order
+﻿using APFood.Models.Cart;
+
+namespace APFood.Models.Order
 {
     public class OrderSummaryModel
     {
