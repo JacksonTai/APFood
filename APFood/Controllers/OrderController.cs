@@ -4,6 +4,7 @@ using APFood.Models.Order;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace APFood.Controllers
 {
@@ -22,8 +23,8 @@ namespace APFood.Controllers
         {
             try
             {
-                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status);
-                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync();
+                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status, GetUserId());
+                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync(GetUserId());
                 return View(new OrderViewModel
                 {
                     OrderList = orders,
@@ -43,7 +44,7 @@ namespace APFood.Controllers
         {
             try
             {
-                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id);
+                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id, GetUserId());
                 return orderDetail == null ? NotFound() : View(orderDetail);
             }
             catch (Exception ex)
@@ -83,5 +84,9 @@ namespace APFood.Controllers
             }
         }
 
+        private string GetUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("User not authenticated.");
+        }
     }
 }

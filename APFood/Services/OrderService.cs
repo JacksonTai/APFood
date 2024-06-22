@@ -93,12 +93,13 @@ namespace APFood.Services
                 .FirstOrDefaultAsync(o => o.Id == orderId);
         }
 
-        public async Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status)
+        public async Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status, string userId)
         {
             return await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Food)
                 .Where(o => o.Status == status)
+                .Where(o => o.CustomerId == userId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Select(o => new OrderListViewModel
                 {
@@ -119,13 +120,14 @@ namespace APFood.Services
                 }).ToListAsync();
         }
 
-        public async Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync()
+        public async Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync(string userId)
         {
             Dictionary<OrderStatus, int> orderCounts = Enum.GetValues(typeof(OrderStatus))
                .Cast<OrderStatus>()
                .ToDictionary(status => status, status => 0);
 
             var dbCounts = await _context.Orders
+                .Where(o => o.CustomerId == userId)
                 .GroupBy(o => o.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
@@ -141,11 +143,12 @@ namespace APFood.Services
             return orderCounts;
         }
 
-        public async Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId)
+        public async Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId, string userId)
         {
             Order order = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(oi => oi.Food)
+                .Where(o => o.CustomerId == userId)
                 .FirstOrDefaultAsync(o => o.Id == orderId) ?? throw new Exception("Order not found");
 
             Payment? payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId)
