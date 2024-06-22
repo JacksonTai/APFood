@@ -84,10 +84,6 @@ namespace APFood.Controllers
 
             food.FoodVendorId = foodVendor.Id;
             food.FoodVendor = foodVendor;
-            _logger.LogInformation(food.Category + "food.Category");
-            _logger.LogInformation(food.Description + "food.Description");
-            _logger.LogInformation(food.FoodVendorId + "foodModel.FoodVendorId");
-            _logger.LogInformation(food.ImageUrl + "food.ImageUrl");
             if (ModelState.IsValid)
             {
                 try
@@ -175,6 +171,7 @@ namespace APFood.Controllers
                 existingFood.Description = food.Description;
                 existingFood.Price = food.Price;
                 existingFood.Category = food.Category;
+                existingFood.Status = food.Status;
 
                 try
                 {

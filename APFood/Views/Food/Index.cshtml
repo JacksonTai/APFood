@@ -32,7 +32,9 @@
                             <p class="card-text flex-grow-1">
                                 @if (item?.Description?.Length > descriptionLengthLimit)
                                 {
-                                    @item.Description.Substring(0, descriptionLengthLimit)<a>...</a>
+                                    @item.Description.Substring(0, descriptionLengthLimit)
+
+                                    <a>...</a>
                                 }
                                 else
                                 {
@@ -41,8 +43,30 @@
                             </p>
                             <p class="card-text"><strong>Rm @item?.Price</strong></p>
                             <div class="d-flex justify-content-between">
-                                <a asp-controller="Food" asp-action="Edit" asp-route-id="@item?.Id" class="btn btn-primary">Edit</a>
-                                <a asp-controller="Food" asp-action="Delete" asp-route-id="@item?.Id" class="btn btn-danger">Delete</a>
+                                <div class="d-flex">
+                                    @if (item?.Status == APFood.Constants.Food.FoodStatus.Available)
+                                    {
+                                        <span class="badge bg-success">
+                                            <h6>Available</h6>
+                                        </span>
+                                    }
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.Unavailable)
+                                    {
+                                        <span class="badge bg-danger">
+                                            <h6>Unavailable</h6>
+                                        </span>
+                                    }
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.OutOfStock)
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <h6>Out of Stock</h6>
+                                        </span>
+                                    }
+                                </div>
+                                <div>
+                                    <a asp-controller="Food" asp-action="Edit" asp-route-id="@item?.Id" class="btn btn-primary">Edit</a>
+                                    <a asp-controller="Food" asp-action="Delete" asp-route-id="@item?.Id" class="btn btn-danger">Delete</a>
+                                </div>
                             </div>
                         </div>
                     </div>

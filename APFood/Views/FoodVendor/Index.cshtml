@@ -18,40 +18,40 @@
     </div>
     <div class="row text-center mb-4">
         <div class="col-md-3">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <h1>
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>
                         @(
                             Model.OrderCounts[APFood.Constants.Order.OrderStatus.Pending] +
                             Model.OrderCounts[APFood.Constants.Order.OrderStatus.Processing] +
                             Model.OrderCounts[APFood.Constants.Order.OrderStatus.Ready]
                         )
-                    </h1>
-                    <h3>Processing</h3>
+                    </h2>
+                    <h4>Processing</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <h1>@Model.CompletedCount</h1>
-                    <h3>Completed</h3>
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>@Model.CompletedCount</h2>
+                    <h4>Completed</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <h1>@Model.CancelledCount</h1>
-                    <h3>Cancelled</h3>
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>@Model.CancelledCount</h2>
+                    <h4>Cancelled</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body text-center">
-                    <h1>Rm @Model.TotalProfit</h1>
-                    <h3>Total Profit</h3>
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>Rm @Model.TotalProfit</h2>
+                    <h4>Total Profit</h4>
                 </div>
             </div>
         </div>
@@ -118,12 +118,12 @@
                                             <form asp-action="UpdateOrderStatus" method="post">
                                                 <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
                                                 <input type="hidden" name="newStatus" value="Processing" />
-                                                <button type="submit" class="btn btn-primary">Process</button>
+                                                <button type="submit" class="btn btn-primary btn-fixed-width">Process</button>
                                             </form>
                                             <form asp-action="UpdateOrderStatus" method="post" class="mt-1">
                                                 <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
                                                 <input type="hidden" name="newStatus" value="Cancelled" />
-                                                <button type="submit" class="btn btn-danger">Cancel</button>
+                                                <button type="submit" class="btn btn-danger btn-fixed-width">Cancel</button>
                                             </form>
                                         }
                                         else if (statusEnum == APFood.Constants.Order.OrderStatus.Processing)
@@ -131,7 +131,7 @@
                                             <form asp-action="UpdateOrderStatus" method="post">
                                                 <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
                                                 <input type="hidden" name="newStatus" value="Ready" />
-                                                <button type="submit" class="btn btn-primary">Ready</button>
+                                                <button type="submit" class="btn btn-primary btn-fixed-width">Ready</button>
                                             </form>
                                         }
                                         else if (statusEnum == APFood.Constants.Order.OrderStatus.Ready)
@@ -139,7 +139,7 @@
                                             <form asp-action="UpdateOrderStatus" method="post">
                                                 <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
                                                 <input type="hidden" name="newStatus" value="Completed" />
-                                                <button type="submit" class="btn btn-primary">Complete</button>
+                                                <button type="submit" class="btn btn-primary btn-fixed-width">Complete</button>
                                             </form>
                                         }
                                     </td>
@@ -213,3 +213,9 @@
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<style>
+    .btn-fixed-width {
+        width: 90px;
+    }
+</style>

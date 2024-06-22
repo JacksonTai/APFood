@@ -1,4 +1,5 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Constants.Food;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APFood.Data
@@ -17,6 +18,7 @@ namespace APFood.Data
         public string? ImageUrl { get; set; }
 
         public string? Category { get; set; }
+        public FoodStatus? Status { get; set; }
 
         [ForeignKey("FoodVendorId")]
         public string? FoodVendorId { get; set; }
@@ -25,6 +27,7 @@ namespace APFood.Data
 
         [NotMapped]
         public IFormFile? ImageFile { get; set; }
+
 
     }
 }
