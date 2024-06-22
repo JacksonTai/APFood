@@ -43,6 +43,7 @@ namespace APFood.Controllers
             var orders = await _context.Orders
                 .Include(o => o.Items)
                     .ThenInclude(oi => oi.Food)
+                .Include(o => o.Customer)
                 .Where(o => o.Items.Any(oi => oi.Food.FoodVendorId == foodVendor.Id))
                 .ToListAsync();
 
@@ -54,6 +55,7 @@ namespace APFood.Controllers
                 {
                     OrderId = o.Id.ToString(),
                     CustomerId = o.CustomerId,
+                    CustomerName = o.Customer.FullName,
                     FoodName = oi.Food.Name,
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
@@ -70,6 +72,7 @@ namespace APFood.Controllers
                 {
                     OrderId = o.Id.ToString(),
                     CustomerId = o.CustomerId,
+                    CustomerName = o.Customer.FullName,
                     FoodName = oi.Food.Name,
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
@@ -86,6 +89,7 @@ namespace APFood.Controllers
                 {
                     OrderId = o.Id.ToString(),
                     CustomerId = o.CustomerId,
+                    CustomerName = o.Customer.FullName,
                     FoodName = oi.Food.Name,
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
