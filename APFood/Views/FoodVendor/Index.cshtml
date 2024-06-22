@@ -1,5 +1,215 @@
-﻿@{
+﻿@model APFood.Models.FoodVendorDashboardViewModel
+@{
     ViewData["Title"] = "Food Vendor Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Welcome, Food Vendor!</h1>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-md-6 align-content-center">
+            <h1 class="text-start fs-2">Welcome,</h1>
+            <h1 class="text-start fs-3">@Model.StoreName</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-controller="Food" asp-action="Index" class="btn btn-primary mt-3">Manage Food</a>
+        </div>
+    </div>
+    <div class="row text-center mb-4">
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body d-flex flex-column align-items-center">
+                    <h1>
+                        @(
+                            Model.OrderCounts[APFood.Constants.Order.OrderStatus.Pending] +
+                            Model.OrderCounts[APFood.Constants.Order.OrderStatus.Processing] +
+                            Model.OrderCounts[APFood.Constants.Order.OrderStatus.Ready]
+                        )
+                    </h1>
+                    <h3>Processing</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body d-flex flex-column align-items-center">
+                    <h1>@Model.CompletedCount</h1>
+                    <h3>Completed</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body d-flex flex-column align-items-center">
+                    <h1>@Model.CancelledCount</h1>
+                    <h3>Cancelled</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body text-center">
+                    <h1>Rm @Model.TotalProfit</h1>
+                    <h3>Total Profit</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="orderTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="processing-tab" data-toggle="tab" href="#processing" role="tab" aria-controls="processing" aria-selected="true">
+                        Processing <span class="badge bg-primary">
+                            @(
+                                Model.OrderCounts[APFood.Constants.Order.OrderStatus.Pending] +
+                                Model.OrderCounts[APFood.Constants.Order.OrderStatus.Processing] +
+                                Model.OrderCounts[APFood.Constants.Order.OrderStatus.Ready]
+                            )
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="completed-tab" data-toggle="tab" href="#completed" role="tab" aria-controls="completed" aria-selected="false">
+                        Completed <span class="badge bg-primary">@Model.OrderCounts[APFood.Constants.Order.OrderStatus.Completed]</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="cancelled-tab" data-toggle="tab" href="#cancelled" role="tab" aria-controls="cancelled" aria-selected="false">
+                        Cancelled <span class="badge bg-primary">@Model.OrderCounts[APFood.Constants.Order.OrderStatus.Cancelled]</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="orderTabsContent">
+                <div class="tab-pane fade show active" id="processing" role="tabpanel" aria-labelledby="processing-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Food Items</th>
+                                <th>Date/Time</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.ProcessingOrders.GroupBy(o => o.OrderId))
+                            {
+                                var firstOrder = order.First();
+                                var foodItems = string.Join("<br> ", order.Select(o => $"<span class='badge badge-primary'>{o.Quantity} x</span> {o.FoodName}"));
+                                var totalPrice = order.Sum(o => o.Price * o.Quantity);
+                                var statusEnum = Enum.Parse<APFood.Constants.Order.OrderStatus>(firstOrder.Status);
+
+                                <tr>
+                                    <td>@firstOrder.OrderId</td>
+                                    <td>@firstOrder.CustomerId</td>
+                                    <td>@Html.Raw(foodItems)</td>
+                                    <td>@firstOrder.DateTime</td>
+                                    <td>@totalPrice</td>
+                                    <td>@statusEnum</td>
+                                    <td>
+                                        @if (statusEnum == APFood.Constants.Order.OrderStatus.Pending)
+                                        {
+                                            <form asp-action="UpdateOrderStatus" method="post">
+                                                <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
+                                                <input type="hidden" name="newStatus" value="Processing" />
+                                                <button type="submit" class="btn btn-primary">Process</button>
+                                            </form>
+                                            <form asp-action="UpdateOrderStatus" method="post" class="mt-1">
+                                                <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
+                                                <input type="hidden" name="newStatus" value="Cancelled" />
+                                                <button type="submit" class="btn btn-danger">Cancel</button>
+                                            </form>
+                                        }
+                                        else if (statusEnum == APFood.Constants.Order.OrderStatus.Processing)
+                                        {
+                                            <form asp-action="UpdateOrderStatus" method="post">
+                                                <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
+                                                <input type="hidden" name="newStatus" value="Ready" />
+                                                <button type="submit" class="btn btn-primary">Ready</button>
+                                            </form>
+                                        }
+                                        else if (statusEnum == APFood.Constants.Order.OrderStatus.Ready)
+                                        {
+                                            <form asp-action="UpdateOrderStatus" method="post">
+                                                <input type="hidden" name="orderId" value="@firstOrder.OrderId" />
+                                                <input type="hidden" name="newStatus" value="Completed" />
+                                                <button type="submit" class="btn btn-primary">Complete</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Food Items</th>
+                                <th>Date/Time</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.CompletedOrders.GroupBy(o => o.OrderId))
+                            {
+                                var firstOrder = order.First();
+                                var foodItems = string.Join("<br> ", order.Select(o => $"<span class='badge badge-primary'>{o.Quantity} x</span> {o.FoodName}"));
+                                var totalPrice = order.Sum(o => o.Price * o.Quantity);
+
+                                <tr>
+                                    <td>@firstOrder.OrderId</td>
+                                    <td>@firstOrder.CustomerId</td>
+                                    <td>@Html.Raw(foodItems)</td>
+                                    <td>@firstOrder.DateTime</td>
+                                    <td>@totalPrice</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Food Items</th>
+                                <th>Date/Time</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.CancelledOrders.GroupBy(o => o.OrderId))
+                            {
+                                var firstOrder = order.First();
+                                var foodItems = string.Join("<br> ", order.Select(o => $"<span class='badge badge-primary'>{o.Quantity} x</span> {o.FoodName}"));
+                                var totalPrice = order.Sum(o => o.Price * o.Quantity);
+
+                                <tr>
+                                    <td>@firstOrder.OrderId</td>
+                                    <td>@firstOrder.CustomerId</td>
+                                    <td>@Html.Raw(foodItems)</td>
+                                    <td>@firstOrder.DateTime</td>
+                                    <td>@totalPrice</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
