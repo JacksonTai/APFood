@@ -1,5 +1,57 @@
-﻿@{
+﻿@model APFood.Models.Customer.CustomerDashboardViewModel
+
+@{
     ViewData["Title"] = "Customer Dashboard";
 }
 
-<h1>Welcome, Customer!</h1>
+<div class="container mt-5">
+    <h2 id="order-heading">Order your food from <span id="store-name">@Model.FoodVendors.FirstOrDefault(v => v.Id == Model.SelectedVendorId)?.StoreName</span></h2>
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <ul class="list-group w-100">
+                @foreach (var vendor in Model.FoodVendors)
+                {
+                    <li class="list-group-item @(vendor.Id == Model.SelectedVendorId ? "active" : "")" data-vendor-id="@vendor.Id" data-vendor-name="@vendor.StoreName">
+                        <a href="#" class="vendor-link @(vendor.Id == Model.SelectedVendorId ? "text-white" : "")" data-vendor-id="@vendor.Id" data-vendor-name="@vendor.StoreName">@vendor.StoreName</a>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-9">
+            <div id="food-items">
+                @Html.Partial("_FoodItemsPartial", Model.FoodItems)
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.list-group-item').on('click', function (e) {
+                e.preventDefault();
+                var vendorId = $(this).data('vendor-id');
+                var vendorName = $(this).data('vendor-name');
+                $.get('@Url.Action("GetFoodItems", "Customer")', { vendorId: vendorId }, function (data) {
+                    $('#food-items').html(data);
+                    $('#store-name').text(vendorName);
+                    $('.list-group-item').removeClass('active');
+                    $('.vendor-link').removeClass('text-white');
+                    $(this).addClass('active');
+                    $(this).find('.vendor-link').addClass('text-white');
+                }.bind(this));
+            });
+        });
+    </script>
+}
+
+<style>
+    .list-group-item.active a {
+        color: white !important;
+    }
+
+    .vendor-link.text-white {
+        color: white !important;
+    }
+</style>

@@ -26,40 +26,39 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
         base.OnModelCreating(builder);
 
         builder.Entity<FoodVendor>()
-                   .ToTable("FoodVendors")
-                   .HasBaseType<APFoodUser>();
+            .ToTable("FoodVendors")
+            .HasBaseType<APFoodUser>();
 
-        // Customer
+    // Customer
         builder.Entity<Customer>()
-               .ToTable("Customers")
-               .HasBaseType<APFoodUser>();
+            .ToTable("Customers")
+            .HasBaseType<APFoodUser>();
 
         builder.Entity<Customer>()
-              .HasOne(c => c.Cart)
-              .WithOne(c => c.Customer)
-              .HasForeignKey<Customer>(c => c.CartId);
+            .HasOne(c => c.Cart)
+            .WithOne(c => c.Customer)
+            .HasForeignKey<Customer>(c => c.CartId);
 
         builder.Entity<Customer>()
             .Property(r => r.Points)
             .HasPrecision(18, 2);
 
-        // Food
+    // Food
         builder.Entity<Food>()
-          .Property(f => f.Price)
-          .HasPrecision(18, 2);
-
-        // Cart
+            .Property(f => f.Price)
+            .HasPrecision(18, 2);
+    // Cart
         builder.Entity<Cart>()
-                 .HasMany(c => c.Items)
-                 .WithOne(ci => ci.Cart)
-                 .HasForeignKey(ci => ci.CartId);
+            .HasMany(c => c.Items)
+            .WithOne(ci => ci.Cart)
+            .HasForeignKey(ci => ci.CartId);
 
         builder.Entity<CartItem>()
             .HasOne(ci => ci.Food)
             .WithMany()
             .HasForeignKey(ci => ci.FoodId);
 
-        // Order
+    // Order
         builder.Entity<Order>()
             .HasOne(o => o.Customer)
             .WithMany()
@@ -83,7 +82,7 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .StartsAt(1)
             .IncrementsBy(1);
 
-        // Order Item
+    // Order Item
         builder.Entity<OrderItem>()
             .HasOne(oi => oi.Food)
             .WithMany()
@@ -94,7 +93,7 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .WithMany(o => o.Items)
             .HasForeignKey(oi => oi.OrderId);
 
-        // Payment
+    // Payment
         builder.Entity<Payment>()
             .HasOne(p => p.Order)
             .WithOne(o => o.Payment)
@@ -120,11 +119,11 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .Property(p => p.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
 
-        // DeliveryTask
+    // DeliveryTask
         builder.Entity<DeliveryTask>()
-           .HasOne(dt => dt.Order)
-           .WithOne()
-           .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
+            .HasOne(dt => dt.Order)
+            .WithOne()
+            .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
 
         builder.Entity<RunnerDeliveryTask>()
             .HasKey(rdt => new { rdt.DeliveryTaskId, rdt.RunnerId });
