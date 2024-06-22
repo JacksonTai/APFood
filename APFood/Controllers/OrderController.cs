@@ -2,10 +2,12 @@
 using APFood.Constants.Order;
 using APFood.Models.Order;
 using APFood.Services.Contract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = UserRole.Customer)]
     [Route("[controller]")]
     public class OrderController(
         IOrderService orderService,

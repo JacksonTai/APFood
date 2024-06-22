@@ -10,6 +10,6 @@ namespace APFood.Data
         public DeliveryStatus Status { get; set; } = DeliveryStatus.Pending;
 
         public List<RunnerDeliveryTask> RunnerDeliveryTasks { get; set; } = [];
-        public Order? Order { get; set; }
+        public required Order Order { get; set; }
     }
 }

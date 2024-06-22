@@ -57,14 +57,14 @@
                                         <td>@order.TotalPaid.ToString("C")</td>
                                         <td class="d-flex">
                                             <a class="btn btn-sm btn-outline-primary me-2" href="/Order/@order.OrderId">View</a>
-                                            @if (order.CanShowReceivedButton)
+                                            @if (order.IsReceivableOrder)
                                             {
                                                 <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
                                                     <input type="hidden" name="orderId" value="@order.OrderId" />
                                                     <button type="submit" class="btn btn-sm btn-outline-success">Received</button>
                                                 </form>
                                             }
-                                            @if (@order.CanShowCancelButton)
+                                            @if (@order.IsCancellableOrder)
                                             {
                                                 <form method="post" asp-controller="Order" asp-action="CancelOrder">
                                                     <input type="hidden" name="orderId" value="@order.OrderId" />

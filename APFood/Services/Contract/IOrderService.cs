@@ -10,8 +10,6 @@ namespace APFood.Services.Contract
     {
         Task<Order> CreateOrder(Cart cart, DineInOption dineInOption);
         Task UpdateOrderStatusAsync(int orderId, OrderStatus newStatus);
-        Task UpdateOrderDeliveryStatusAsync(int orderId, DeliveryStatus newStatus);
-        Task UpdateOrderRunnerDeliveryStatusAsync(int orderId, DeliveryStatus newStatus);
         Task ReceiveOrder(int orderId);
         Task CancelOrder(int orderId);
         Task<Order?> GetOrderByIdAsync(int orderId);

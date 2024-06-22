@@ -6,7 +6,7 @@ namespace APFood.Models.Attributes
     {
         private readonly string[] _domains = domains;
 
-        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
             if (value is string email)
             {
