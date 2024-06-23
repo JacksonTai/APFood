@@ -42,29 +42,31 @@
                                         }
                                     </p>
                                     <p class="card-text"><strong>Rm @item?.Price</strong></p>
-                                    
-                                    @if (Model.CartItems.ContainsKey(item.Id))
+                                    @if (item?.Status == (int)APFood.Constants.Food.FoodStatus.Available)
                                     {
-                                        <div class="input-group mt-3">
-                                            <form asp-action="UpdateCartQuantity" method="post" class="d-inline update-cart-form">
-                                                <input type="hidden" name="foodId" value="@item.Id" />
-                                                <input type="hidden" name="quantity" value="@Model.CartItems[item.Id] - 1" />
-                                                <button type="submit" class="btn btn-outline-secondary">-</button>
+                                        @if (Model.CartItems.ContainsKey(item.Id))
+                                        {
+                                            <div class="input-group mt-3">
+                                                <button type="button" class="btn btn-outline-secondary decrement-btn" data-food-id="@item.Id" data-quantity="@Model.CartItems[item.Id]">-</button>
+                                                <input type="text" class="form-control text-center" value="@Model.CartItems[item.Id]" readonly>
+                                                <button type="button" class="btn btn-outline-secondary increment-btn" data-food-id="@item.Id" data-quantity="@Model.CartItems[item.Id]">+</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <form id="checkCartForm-@item.Id" class="checkCartForm" method="post">
+                                                <input type="hidden" name="foodId" value="@item?.Id" />
+                                                <button type="submit" class="btn btn-primary mt-3">Add to Cart</button>
                                             </form>
-                                            <input type="text" class="form-control text-center" value="@Model.CartItems[item.Id]" readonly>
-                                            <form asp-action="UpdateCartQuantity" method="post" class="d-inline update-cart-form">
-                                                <input type="hidden" name="foodId" value="@item.Id" />
-                                                <input type="hidden" name="quantity" value="@Model.CartItems[item.Id] + 1" />
-                                                <button type="submit" class="btn btn-outline-secondary">+</button>
-                                            </form>
-                                        </div>
+                                        }
                                     }
-                                    else
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.Unavailable)
                                     {
-                                        <form id="checkCartForm-@item.Id" class="checkCartForm" method="post">
-                                            <input type="hidden" name="foodId" value="@item?.Id" />
-                                            <button type="submit" class="btn btn-primary mt-3">Add to Cart</button>
-                                        </form>
+                                        <button class="btn btn-danger mt-3" disabled>Unavailable</button>
+                                    }
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.OutOfStock)
+                                    {
+                                        <button class="btn btn-secondary mt-3" disabled>Out of Stock</button>
                                     }
                                 </div>
                             </div>
@@ -143,8 +145,8 @@
                         var confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
                         if (confirmModal) {
                             confirmModal.hide();
-                            location.reload();
                         }
+                        location.reload();
                     } else {
                         console.error('An error occurred while processing your request.');
                     }
@@ -152,11 +154,15 @@
                 xhr.send("foodId=" + foodId + "&clearCart=" + clearCart);
             }
 
-            document.querySelectorAll(".add-to-cart-form, .update-cart-form").forEach(function (form) {
-                form.addEventListener("submit", function (e) {
-                    e.preventDefault();
+            document.querySelectorAll(".increment-btn, .decrement-btn").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    var foodId = this.dataset.foodId;
+                    var quantity = parseInt(this.dataset.quantity);
+                    var isIncrement = this.classList.contains("increment-btn");
+                    var newQuantity = isIncrement ? quantity + 1 : quantity - 1;
+
                     var xhr = new XMLHttpRequest();
-                    xhr.open("POST", form.action, true);
+                    xhr.open("POST", '@Url.Action("UpdateCartQuantity", "Customer")', true);
                     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                     xhr.onload = function () {
                         if (xhr.status === 200) {
@@ -165,7 +171,7 @@
                             console.error('An error occurred while processing your request.');
                         }
                     };
-                    xhr.send(new URLSearchParams(new FormData(form)).toString());
+                    xhr.send("foodId=" + foodId + "&quantity=" + newQuantity);
                 });
             });
         });

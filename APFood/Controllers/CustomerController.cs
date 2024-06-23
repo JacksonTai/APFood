@@ -48,7 +48,6 @@ namespace APFood.Controllers
             return View(model);
         }
 
-
         [HttpPost]
         public async Task<IActionResult> CheckCart(int foodId)
         {
@@ -81,7 +80,7 @@ namespace APFood.Controllers
 
             if (customer == null)
             {
-                return BadRequest("Customer not found.");
+                return Json(new { success = false, message = "Customer not found." });
             }
 
             var cart = customer.Cart ?? new Cart
@@ -101,7 +100,7 @@ namespace APFood.Controllers
             var food = await _context.Foods.FindAsync(foodId);
             if (food == null)
             {
-                return BadRequest("Food item not found.");
+                return Json(new { success = false, message = "Food item not found." });
             }
 
             var cartItem = cart.Items.FirstOrDefault(ci => ci.FoodId == foodId);
@@ -128,7 +127,7 @@ namespace APFood.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok();
+            return Json(new { success = true, quantity = cart.Items.FirstOrDefault(ci => ci.FoodId == foodId)?.Quantity ?? 0 });
         }
 
         [HttpPost]
@@ -169,7 +168,5 @@ namespace APFood.Controllers
             await _context.SaveChangesAsync();
             return Json(new { success = true, quantity = quantity });
         }
-
-
     }
 }
