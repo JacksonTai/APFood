@@ -8,5 +8,6 @@ namespace APFood.Models.Customer
         public List<Data.FoodVendor>? FoodVendors { get; set; }
         public List<Food>? FoodItems { get; set; }
         public string? SelectedVendorId { get; set; }
+        public Dictionary<int, int>? CartItems { get; set; }
     }
 }
