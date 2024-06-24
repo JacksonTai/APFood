@@ -4,6 +4,7 @@
     {
         Available,
         Unavailable,
-        OutOfStock
+        OutOfStock,
+        Deleted
     }
 }

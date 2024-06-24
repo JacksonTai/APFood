@@ -7,6 +7,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using APFood.Constants.Food;
+using Microsoft.EntityFrameworkCore;
+using APFood.Constants.Order;
 
 namespace APFood.Controllers
 {
@@ -27,12 +30,16 @@ namespace APFood.Controllers
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
-            var foodVendor = _context.FoodVendors.FirstOrDefault(v => v.Id == user.Id);
+            var foodVendor = await _context.FoodVendors.FirstOrDefaultAsync(v => v.Id == user.Id);
             if (foodVendor == null)
             {
                 return NotFound();
             }
-            var foods = _context.Foods.Where(f => f.FoodVendorId == foodVendor.Id).ToList();
+
+            var foods = await _context.Foods
+                .Where(f => f.FoodVendorId == foodVendor.Id && f.Status != FoodStatus.Deleted)
+                .ToListAsync();
+
             return View(foods);
         }
 
@@ -211,19 +218,40 @@ namespace APFood.Controllers
             {
                 try
                 {
-                    _context.Foods.Remove(food);
+                    var hasActiveOrders = await _context.OrderItems
+                        .Include(oi => oi.Order)
+                        .AnyAsync(oi => oi.FoodId == id && (oi.Order.Status == OrderStatus.Processing || oi.Order.Status == OrderStatus.Ready));
+
+                    if (hasActiveOrders)
+                    {
+                        ModelState.AddModelError(string.Empty, "Cannot delete food item as it is part of active orders.");
+                        _logger.LogInformation("Cannot delete food item as it is part of active orders.");
+                        return View(food);
+                    }
+
+                    // Remove cart items for this food
+                    var cartItems = await _context.CartItems.Where(ci => ci.FoodId == id).ToListAsync();
+                    if (cartItems.Any())
+                    {
+                        _context.CartItems.RemoveRange(cartItems);
+                        _logger.LogInformation($"Removed {cartItems.Count} cart items containing food ID {id}");
+                    }
+
+                    food.Status = FoodStatus.Deleted; // Mark food as deleted
+                    _context.Update(food);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Food deleted successfully");
+                    _logger.LogInformation("Food marked as deleted successfully");
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error deleting food from database");
-                    ModelState.AddModelError(string.Empty, "Error deleting from database");
+                    _logger.LogError(ex, "Error marking food as deleted");
+                    ModelState.AddModelError(string.Empty, "Error updating status in database");
                 }
             }
 
             return RedirectToAction(nameof(Index));
         }
+
     }
 }

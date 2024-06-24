@@ -1,7 +1,24 @@
-﻿@model APFood.Data.Food
+﻿@using APFood.Constants.Food
+@model APFood.Data.Food
 
 @{
     ViewData["Title"] = "Add Food";
+}
+
+@functions {
+    public static IEnumerable<SelectListItem> GetFoodStatusSelectList()
+    {
+        var values = Enum.GetValues(typeof(FoodStatus))
+            .Cast<FoodStatus>()
+            .Where(e => e != FoodStatus.Deleted)
+            .Select(e => new SelectListItem
+                {
+                    Text = e.ToString(),
+                    Value = ((int)e).ToString()
+                });
+
+        return values;
+    }
 }
 
 <div class="container mt-5">
@@ -48,7 +65,7 @@
                     </div>
                     <div class="form-group mb-3">
                         <label asp-for="Status" class="control-label"></label>
-                        <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<APFood.Constants.Food.FoodStatus>()"></select>
+                        <select asp-for="Status" class="form-control" asp-items="GetFoodStatusSelectList()"></select>
                         <span asp-validation-for="Status" class="text-danger"></span>
                     </div>
                     <div class="form-group">

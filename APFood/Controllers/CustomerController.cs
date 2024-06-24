@@ -1,4 +1,5 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Constants.Food;
 using APFood.Data;
 using APFood.Models.Customer;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +33,7 @@ namespace APFood.Controllers
             var selectedVendorId = vendorId ?? foodVendors.FirstOrDefault()?.Id;
 
             var foodItems = selectedVendorId != null
-                ? await _context.Foods.Where(f => f.FoodVendorId == selectedVendorId).ToListAsync()
+                ? await _context.Foods.Where(f => f.FoodVendorId == selectedVendorId && f.Status != FoodStatus.Deleted).ToListAsync()
                 : new List<Food>();
 
             var cartItems = customer?.Cart?.Items.ToDictionary(i => i.FoodId, i => i.Quantity) ?? new Dictionary<int, int>();

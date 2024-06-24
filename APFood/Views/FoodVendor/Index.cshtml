@@ -51,7 +51,7 @@
             <div class="card text-white h-100">
                 <div class="card-body text-black d-flex flex-column align-items-center">
                     <h2>Rm @Model.TotalProfit</h2>
-                    <h4>Total Profit</h4>
+                    <h4>Total Revenue</h4>
                 </div>
             </div>
         </div>
@@ -110,7 +110,7 @@
                                     <td>@firstOrder.CustomerName</td>
                                     <td>@Html.Raw(foodItems)</td>
                                     <td>@firstOrder.DateTime</td>
-                                    <td>@totalPrice</td>
+                                    <td>Rm @totalPrice</td>
                                     <td>@statusEnum</td>
                                     <td>
                                         @if (statusEnum == APFood.Constants.Order.OrderStatus.Pending)
@@ -171,7 +171,7 @@
                                     <td>@firstOrder.CustomerName</td>
                                     <td>@Html.Raw(foodItems)</td>
                                     <td>@firstOrder.DateTime</td>
-                                    <td>@totalPrice</td>
+                                    <td>Rm @totalPrice</td>
                                 </tr>
                             }
                         </tbody>
@@ -200,7 +200,7 @@
                                     <td>@firstOrder.CustomerName</td>
                                     <td>@Html.Raw(foodItems)</td>
                                     <td>@firstOrder.DateTime</td>
-                                    <td>@totalPrice</td>
+                                    <td>Rm @totalPrice</td>
                                 </tr>
                             }
                         </tbody>
