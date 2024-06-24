@@ -6,6 +6,12 @@
 }
 
 <div class="container mt-5">
+    <div class="d-flex justify-content-end align-items-center">
+        <i class="fa-regular fa-circle-question d-block me-2" data-toggle="tooltip" data-placement="left" 
+           title="The runner points can be earned by delivering food order and can be used to offset your 
+                  payment amount when buying food"></i>
+        <p class="mb-0">Total Runner Points: <strong>@Model.TotalPoints</strong></p>
+    </div>
     <h2 id="order-heading">Order your food from <span id="store-name">@Model.FoodVendors.FirstOrDefault(v => v.Id == Model.SelectedVendorId)?.StoreName</span></h2>
     <div class="row mt-3">
         <div class="col-md-3">
@@ -102,6 +108,7 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/shared/bootstrap.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(".checkCartForm").forEach(function (form) {

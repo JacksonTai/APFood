@@ -11,10 +11,12 @@ namespace APFood.Controllers
     [Route("[controller]")]
     public class DeliveryTaskController(
         IDeliveryTaskService deliveryTaskService,
+        IRunnerPointService runnerPointService,
         ILogger<OrderController> logger
         ) : Controller
     {
         private readonly IDeliveryTaskService _deliveryTaskService = deliveryTaskService;
+        private readonly IRunnerPointService _runnerPointService = runnerPointService;
         private readonly ILogger<OrderController> _logger = logger;
 
         [HttpGet]
@@ -27,7 +29,8 @@ namespace APFood.Controllers
                 {
                     DeliveryTaskList = await _deliveryTaskService.GetDeliveryTasksByStatusAsync(status, userId),
                     DeliveryTaskCounts = await _deliveryTaskService.GetDeliveryTaskCountsAsync(userId),
-                    CurrentStatus = status
+                    CurrentStatus = status,
+                    TotalPointsEarned = await _runnerPointService.GetTotalEarned(userId),
                 });
             }
             catch (Exception ex)

@@ -24,6 +24,7 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddScoped<APFood.Services.Contract.IRegisterService, RegisterService>();
 builder.Services.AddScoped<APFood.Services.Contract.ILoginService, LoginService>();
+builder.Services.AddScoped<APFood.Services.Contract.IRunnerPointService, RunnerPointService>();
 builder.Services.AddScoped<APFood.Services.Contract.ICartService, CartService>();
 builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, PaymentService>();
 builder.Services.AddScoped<APFood.Services.Contract.IOrderService, OrderService>();

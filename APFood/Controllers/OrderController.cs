@@ -12,24 +12,28 @@ namespace APFood.Controllers
     [Route("[controller]")]
     public class OrderController(
         IOrderService orderService,
+        IRunnerPointService runnerPointService,
         ILogger<OrderController> logger
         ) : Controller
     {
         private readonly IOrderService _orderService = orderService;
+        private readonly IRunnerPointService _runnerPointService = runnerPointService;
         private readonly ILogger<OrderController> _logger = logger;
 
         [HttpGet]
         public async Task<IActionResult> Index(OrderStatus status = OrderStatus.Pending)
         {
+            string userId = GetUserId();
             try
             {
-                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status, GetUserId());
-                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync(GetUserId());
+                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status, userId);
+                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync(userId);
                 return View(new OrderViewModel
                 {
                     OrderList = orders,
                     OrderCounts = orderCounts,
-                    CurrentStatus = status
+                    CurrentStatus = status,
+                    TotalPointsSpent = await _runnerPointService.GetTotalSpent(userId)
                 });
             }
             catch (Exception ex)
