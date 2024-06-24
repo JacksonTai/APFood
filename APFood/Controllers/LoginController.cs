@@ -52,7 +52,17 @@ namespace APFood.Controllers
             var result = await _loginService.LoginUserAsync(loginModel.Email, loginModel.Password, role);
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                switch (role)
+                {
+                    case UserRole.Customer:
+                        return RedirectToAction("Index", "Customer");
+                    case UserRole.FoodVendor:
+                        return RedirectToAction("Index", "FoodVendor");
+                    case UserRole.Admin:
+                        return RedirectToAction("Index", "Admin");
+                    default:
+                        return RedirectToAction("Index", "Home");
+                }
             }
             ModelState.AddModelError(string.Empty, "Invalid email or password.");
             return View();
