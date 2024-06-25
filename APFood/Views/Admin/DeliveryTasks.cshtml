@@ -1,0 +1,79 @@
+﻿@model APFood.Models.Order.OrderViewModel
+
+@{
+    ViewData["Title"] = "Delivery Tasks";
+    string IsActive(OrderStatus status) => Model.CurrentStatus == status ? "active" : "";
+    var statuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
+}
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <h1 class="text-start fs-2">Delivery Tasks</h1>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="orderTabs" role="tablist">
+                @foreach (var status in statuses)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(IsActive(status))" href="/Admin/DeliveryTasks?status=@(status)">
+                            @status <span class="badge bg-primary">@Model.OrderCounts[status]</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="orderTabsContent">
+                @if (Model.OrderList.Count == 0)
+                {
+                    <div class="tab-pane fade show active" id="emptyState" role="tabpanel">
+                        <p class="text-muted">No @Model.CurrentStatus orders found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="tab-pane fade show active" id="processing" role="tabpanel" aria-labelledby="processing-tab">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>Order ID</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var task in Model.OrderList)
+                                {
+                                    <tr>
+                                        <td>@task.TaskId</td>
+                                        <td>@task.OrderId</td>
+                                        <td>@task.Status</td>
+                                        <td class="d-flex">
+                                            <a class="btn btn-sm btn-outline-primary me-2" href="/Admin/DeliveryTask/@task.TaskId">View</a>
+                                            @if (task.CanShowCompleteButton)
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="CompleteTask">
+                                                    <input type="hidden" name="taskId" value="@task.TaskId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Complete</button>
+                                                </form>
+                                            }
+                                            @if (task.CanShowCancelButton)
+                                            {
+                                                <form method="post" asp-controller="Admin" asp-action="CancelTask">
+                                                    <input type="hidden" name="taskId" value="@task.TaskId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
