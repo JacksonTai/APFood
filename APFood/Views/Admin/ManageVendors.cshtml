@@ -1,29 +1,18 @@
-﻿@model IEnumerable<APFoodUser>
+﻿@model IEnumerable<APFood.Models.Admin.FoodVendorViewModel>
 
 @{
     ViewData["Title"] = "Manage Vendors";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Manage Vendors</h1>
+<h2>Manage Vendors</h2>
 
-<form asp-action="CreateVendor" method="post">
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" class="form-control" id="email" name="email" required>
-    </div>
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" class="form-control" id="password" name="password" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Create Vendor</button>
-</form>
-
-<table class="table mt-4">
+<table class="table">
     <thead>
         <tr>
-            <th>Username</th>
+            <th>Store Name</th>
+            <th>User Name</th>
             <th>Email</th>
-            <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -31,24 +20,18 @@
         @foreach (var vendor in Model)
         {
             <tr>
+                <td>@vendor.StoreName</td>
                 <td>@vendor.UserName</td>
                 <td>@vendor.Email</td>
-                <td>@vendor.Status</td>
                 <td>
-                    <form asp-action="UpdateVendorStatus" method="post" class="d-inline">
-                        <input type="hidden" name="vendorId" value="@vendor.Id" />
-                        <select name="status">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
-                    </form>
-                    <form asp-action="DeleteVendor" method="post" class="d-inline">
-                        <input type="hidden" name="vendorId" value="@vendor.Id" />
-                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    <a asp-action="EditVendor" asp-route-id="@vendor.Id" class="btn btn-primary">Edit</a>
+                    <form asp-action="DeleteVendor" asp-route-id="@vendor.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+<a asp-action="CreateVendor" class="btn btn-primary">Create New Vendor</a>
