@@ -1,5 +1,4 @@
 ﻿using APFood.Constants;
-using APFood.Data;
 using Microsoft.AspNetCore.Identity;
 
 namespace APFood.Areas.Identity.Data
@@ -10,11 +9,9 @@ namespace APFood.Areas.Identity.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<APFoodUser>>();
-            var context = serviceProvider.GetRequiredService<APFoodContext>();
 
             await SeedRolesAsync(roleManager);
             await SeedSuperAdminAsync(userManager);
-            SeedFoodData(context);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -43,20 +40,6 @@ namespace APFood.Areas.Identity.Data
                 {
                     await userManager.AddToRoleAsync(superadmin, UserRole.Admin);
                 }
-            }
-        }
-
-        private static void SeedFoodData(APFoodContext context)
-        {
-            if (!context.Foods.Any())
-            {
-                context.Foods.AddRange(
-                    new Food { Name = "Pizza", Price = 8.99m },
-                    new Food { Name = "Burger", Price = 5.49m },
-                    new Food { Name = "Salad", Price = 4.75m },
-                    new Food { Name = "Pasta", Price = 7.99m }
-                );
-                context.SaveChanges();
             }
         }
     }

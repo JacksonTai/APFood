@@ -1,0 +1,189 @@
+﻿@model APFood.Models.Customer.CustomerDashboardViewModel
+
+@{
+    ViewData["Title"] = "Customer Dashboard";
+    int descriptionLengthLimit = 90;
+}
+
+<div class="container mt-5">
+    <h2 id="order-heading">Order your food from <span id="store-name">@Model.FoodVendors.FirstOrDefault(v => v.Id == Model.SelectedVendorId)?.StoreName</span></h2>
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <ul class="list-group w-100">
+                @foreach (var vendor in Model.FoodVendors)
+                {
+                    <li class="list-group-item @(vendor.Id == Model.SelectedVendorId ? "active" : "")">
+                        <form asp-action="Index" method="get">
+                            <input type="hidden" name="vendorId" value="@vendor.Id" />
+                            <button type="submit" class="btn btn-link vendor-link @(vendor.Id == Model.SelectedVendorId ? "text-white" : "")">@vendor.StoreName</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-9">
+            <div id="food-items">
+                <div class="row">
+                    @foreach (var item in Model.FoodItems)
+                    {
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="@item?.ImageUrl" class="card-img-top" alt="@item?.Name" style="height: 200px; object-fit: cover;">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">@item?.Name</h5>
+                                    <p class="card-text flex-grow-1">
+                                        @if (item?.Description?.Length > descriptionLengthLimit)
+                                        {
+                                            @item.Description.Substring(0, descriptionLengthLimit) <a>...</a>
+                                        }
+                                        else
+                                        {
+                                            @item?.Description
+                                        }
+                                    </p>
+                                    <p class="card-text"><strong>Rm @item?.Price</strong></p>
+                                    @if (item?.Status == (int)APFood.Constants.Food.FoodStatus.Available)
+                                    {
+                                        @if (Model.CartItems.ContainsKey(item.Id))
+                                        {
+                                            <div class="input-group mt-3">
+                                                <button type="button" class="btn btn-outline-secondary decrement-btn" data-food-id="@item.Id" data-quantity="@Model.CartItems[item.Id]">-</button>
+                                                <input type="text" class="form-control text-center" value="@Model.CartItems[item.Id]" readonly>
+                                                <button type="button" class="btn btn-outline-secondary increment-btn" data-food-id="@item.Id" data-quantity="@Model.CartItems[item.Id]">+</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <form id="checkCartForm-@item.Id" class="checkCartForm" method="post">
+                                                <input type="hidden" name="foodId" value="@item?.Id" />
+                                                <button type="submit" class="btn btn-primary mt-3">Add to Cart</button>
+                                            </form>
+                                        }
+                                    }
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.Unavailable)
+                                    {
+                                        <button class="btn btn-danger mt-3" disabled>Unavailable</button>
+                                    }
+                                    else if (item?.Status == APFood.Constants.Food.FoodStatus.OutOfStock)
+                                    {
+                                        <button class="btn btn-secondary mt-3" disabled>Out of Stock</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Adding items from a different vendor will clear your current cart. Do you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <form id="confirmForm" method="post">
+                    <input type="hidden" id="confirmFoodId" name="foodId" value="" />
+                    <input type="hidden" name="clearCart" value="true" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Proceed</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".checkCartForm").forEach(function (form) {
+                form.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    var foodId = this.querySelector("input[name='foodId']").value;
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", '@Url.Action("CheckCart", "Customer")', true);
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.clearCart) {
+                                document.getElementById("confirmFoodId").value = foodId;
+                                var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                                confirmModal.show();
+                            } else {
+                                addToCart(foodId);
+                            }
+                        } else {
+                            console.error('An error occurred while processing your request.');
+                        }
+                    };
+                    xhr.send("foodId=" + foodId);
+                });
+            });
+
+            document.getElementById("confirmForm").addEventListener("submit", function (e) {
+                e.preventDefault();
+                var foodId = document.getElementById("confirmFoodId").value;
+                addToCart(foodId, true);
+            });
+
+            function addToCart(foodId, clearCart = false) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", '@Url.Action("AddToCart", "Customer")', true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        var confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                        if (confirmModal) {
+                            confirmModal.hide();
+                        }
+                        location.reload();
+                    } else {
+                        console.error('An error occurred while processing your request.');
+                    }
+                };
+                xhr.send("foodId=" + foodId + "&clearCart=" + clearCart);
+            }
+
+            document.querySelectorAll(".increment-btn, .decrement-btn").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    var foodId = this.dataset.foodId;
+                    var quantity = parseInt(this.dataset.quantity);
+                    var isIncrement = this.classList.contains("increment-btn");
+                    var newQuantity = isIncrement ? quantity + 1 : quantity - 1;
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", '@Url.Action("UpdateCartQuantity", "Customer")', true);
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            location.reload();
+                        } else {
+                            console.error('An error occurred while processing your request.');
+                        }
+                    };
+                    xhr.send("foodId=" + foodId + "&quantity=" + newQuantity);
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    .list-group-item.active a {
+        color: white !important;
+    }
+
+    .vendor-link.text-white {
+        color: white !important;
+    }
+</style>
