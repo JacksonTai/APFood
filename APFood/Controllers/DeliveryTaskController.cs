@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace APFood.Controllers
 {
-    [Authorize(Roles = UserRole.Customer)]
+    [Authorize(Roles = $"{UserRole.Customer},{UserRole.Admin}")]
     [Route("[controller]")]
     public class DeliveryTaskController(
         IDeliveryTaskService deliveryTaskService,
@@ -19,18 +19,32 @@ namespace APFood.Controllers
         private readonly IRunnerPointService _runnerPointService = runnerPointService;
         private readonly ILogger<OrderController> _logger = logger;
 
-        [HttpGet]
         public async Task<IActionResult> Index(DeliveryStatus status = DeliveryStatus.Pending)
         {
             string userId = GetUserId();
+            bool isAdmin = User.IsInRole(UserRole.Admin);
             try
             {
+                List<DeliveryTaskListViewModel> deliveryTasks;
+                Dictionary<DeliveryStatus, int> deliveryTaskCounts;
+                if (isAdmin)
+                {
+                    deliveryTasks = await _deliveryTaskService.GetDeliveryTasksByStatusAdminAsync(status);
+                    deliveryTaskCounts = await _deliveryTaskService.GetDeliveryTaskCountsAdminAsync();
+                }
+                else
+                {
+                    deliveryTasks = await _deliveryTaskService.GetDeliveryTasksByStatusAsync(status, userId);
+                    deliveryTaskCounts = await _deliveryTaskService.GetDeliveryTaskCountsAsync(userId);
+                }
+
                 return View(new DeliveryTaskViewModel
                 {
-                    DeliveryTaskList = await _deliveryTaskService.GetDeliveryTasksByStatusAsync(status, userId),
-                    DeliveryTaskCounts = await _deliveryTaskService.GetDeliveryTaskCountsAsync(userId),
+                    DeliveryTaskList = deliveryTasks,
+                    DeliveryTaskCounts = deliveryTaskCounts,
                     CurrentStatus = status,
-                    TotalPointsEarned = await _runnerPointService.GetTotalEarned(userId),
+                    TotalPointsEarned = isAdmin ? 0 : await _runnerPointService.GetTotalEarned(userId),
+                    IsAdmin = isAdmin
                 });
             }
             catch (Exception ex)
@@ -43,18 +57,33 @@ namespace APFood.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Detail(int id)
         {
+            bool isAdmin = User.IsInRole(UserRole.Admin);
             try
             {
-                DeliveryTaskDetailViewModel? deliveryTaskDetail =
-                    await _deliveryTaskService.GetDeliveryTaskDetailAsync(id, GetUserId());
+                DeliveryTaskDetailViewModel? deliveryTaskDetail;
+                if (isAdmin)
+                {
+                    deliveryTaskDetail = await _deliveryTaskService.GetDeliveryTaskDetailAdminAsync(id);
+                }
+                else
+                {
+                    deliveryTaskDetail = await _deliveryTaskService.GetDeliveryTaskDetailAsync(id, GetUserId());
+                }
+
+                if (deliveryTaskDetail != null)
+                {
+                    deliveryTaskDetail.IsAdmin = isAdmin;
+                }
                 return deliveryTaskDetail == null ? NotFound() : View(deliveryTaskDetail);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while loading the detail for delivery task {DeliveryTaskId}", id);
+                _logger.LogError(ex, "An error occurred while loading the delivery task detail for task {DeliveryTaskId}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
             }
         }
+
+
 
         [HttpPost("AcceptDeliveryTask")]
         public async Task<IActionResult> AcceptDeliveryTask(int deliveryTaskId)
