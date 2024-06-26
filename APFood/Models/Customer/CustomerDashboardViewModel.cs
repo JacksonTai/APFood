@@ -9,5 +9,6 @@ namespace APFood.Models.Customer
         public List<Food>? FoodItems { get; set; }
         public string? SelectedVendorId { get; set; }
         public Dictionary<int, int>? CartItems { get; set; }
+        public decimal TotalPoints { get; set; } = 0;
     }
 }

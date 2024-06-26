@@ -32,6 +32,16 @@
         <div>
             <hr class="mb-4">
             <h5 class="mb-3">Delivery Information</h5>
+            @if(Model.DeliveryStatus == DeliveryStatus.Cancelled)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Warning:">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                    </svg>
+                    <strong>Delivery Cancelled</strong> Please wait for other runners to accept your delivery.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
             <div>
                 <p>Location: @Model.DeliveryLocation</p>
                 <p>Runner: @(string.IsNullOrEmpty(Model.Runner) ? "-" : Model.Runner)</p>
@@ -44,22 +54,22 @@
         @foreach (var item in Model.Items)
         {
             <li class="d-flex justify-content-between lh-sm">
-                <P>@item.Food.Name x @item.Quantity</P>
+                <p>@item.Food.Name x @item.Quantity</p>
                 <span>RM @(item.Food.Price * item.Quantity) </span>
             </li>
         }
         <hr class="mb-4">
         <li class="d-flex justify-content-between">
-            <P>Subtotal</P>
+            <p>Subtotal</p>
             <p>@Model.OrderSummary.Subtotal.ToString("C")</p>
         </li>
         <li class="d-flex justify-content-between">
-            <P>Delivery Fee</P>
-            <P>@Model.OrderSummary.DeliveryFee.ToString("C")</P>
+            <p>Delivery Fee</p>
+            <p>@Model.OrderSummary.DeliveryFee.ToString("C")</p>
         </li>
         <li class="d-flex justify-content-between">
-            <P>Runner Points Redeemed</P>
-            <P>- @Model.OrderSummary.RunnerPointsRedeemed.ToString("C")</P>
+            <p>Runner Points Redeemed</p>
+            <p>- @Model.OrderSummary.RunnerPointsRedeemed.ToString("C")</p>
         </li>
         <hr class="mb-4">
         <li class="d-flex justify-content-between">
@@ -67,14 +77,14 @@
             <h5>@Model.OrderSummary.Total.ToString("C")</h5>
         </li>
     </ul>
-    @if (@Model.CanShowReceivedButton)
+    @if (@Model.IsReceivableOrder)
     {
         <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
             <input type="hidden" name="orderId" value="@Model.OrderId" />
             <button type="submit" class="btn btn-success w-100 mt-2">Order Received</button>
         </form>
     }
-    @if (@Model.CanShowCancelButton)
+    @if (@Model.IsCancellableOrder)
     {
         <form method="post" asp-controller="Order" asp-action="CancelOrder">
             <input type="hidden" name="orderId" value="@Model.OrderId" />

@@ -2,11 +2,10 @@
 using APFood.Constants.Food;
 using APFood.Data;
 using APFood.Models.Customer;
+using APFood.Services.Contract;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace APFood.Controllers
 {
@@ -14,11 +13,17 @@ namespace APFood.Controllers
     {
         private readonly APFoodContext _context;
         private readonly UserManager<APFoodUser> _userManager;
+        private readonly IRunnerPointService _runnerPointService;
 
-        public CustomerController(APFoodContext context, UserManager<APFoodUser> userManager)
+        public CustomerController(
+            APFoodContext context, 
+            UserManager<APFoodUser> userManager,
+            IRunnerPointService runnerPointService
+            )
         {
             _context = context;
             _userManager = userManager;
+            _runnerPointService = runnerPointService;
         }
 
         public async Task<IActionResult> Index(string vendorId = null)
@@ -43,7 +48,8 @@ namespace APFood.Controllers
                 FoodVendors = foodVendors,
                 FoodItems = foodItems,
                 SelectedVendorId = selectedVendorId,
-                CartItems = cartItems
+                CartItems = cartItems,
+                TotalPoints = await _runnerPointService.GetTotalPoints(user.Id)
             };
 
             return View(model);

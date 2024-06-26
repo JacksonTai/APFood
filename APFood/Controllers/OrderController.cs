@@ -2,31 +2,38 @@
 using APFood.Constants.Order;
 using APFood.Models.Order;
 using APFood.Services.Contract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = UserRole.Customer)]
     [Route("[controller]")]
     public class OrderController(
         IOrderService orderService,
+        IRunnerPointService runnerPointService,
         ILogger<OrderController> logger
         ) : Controller
     {
         private readonly IOrderService _orderService = orderService;
+        private readonly IRunnerPointService _runnerPointService = runnerPointService;
         private readonly ILogger<OrderController> _logger = logger;
 
         [HttpGet]
         public async Task<IActionResult> Index(OrderStatus status = OrderStatus.Pending)
         {
+            string userId = GetUserId();
             try
             {
-                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status);
-                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync();
+                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status, userId);
+                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync(userId);
                 return View(new OrderViewModel
                 {
                     OrderList = orders,
                     OrderCounts = orderCounts,
-                    CurrentStatus = status
+                    CurrentStatus = status,
+                    TotalPointsSpent = await _runnerPointService.GetTotalSpent(userId)
                 });
             }
             catch (Exception ex)
@@ -41,7 +48,7 @@ namespace APFood.Controllers
         {
             try
             {
-                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id);
+                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id, GetUserId());
                 return orderDetail == null ? NotFound() : View(orderDetail);
             }
             catch (Exception ex)
@@ -81,5 +88,9 @@ namespace APFood.Controllers
             }
         }
 
+        private string GetUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("User not authenticated.");
+        }
     }
 }

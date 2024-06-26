@@ -15,7 +15,7 @@ namespace APFood.Models.Order
         public string? Runner { get; set; }
         public required List<Data.OrderItem> Items { get; set; }
         public required OrderSummaryModel OrderSummary { get; set; }
-        public required bool CanShowReceivedButton { get; set; }
-        public required bool CanShowCancelButton { get; set; }
+        public required bool IsReceivableOrder { get; set; }
+        public required bool IsCancellableOrder { get; set; }
     }
 }
