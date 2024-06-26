@@ -1,13 +1,9 @@
-﻿using APFood.Areas.Identity.Data;
-using APFood.Constants;
+﻿using APFood.Constants.Order;
 using APFood.Data;
 using APFood.Models.Admin;
-using APFood.Models.Register;
 using APFood.Services.Contract;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace APFood.Controllers
 {
@@ -22,115 +18,49 @@ namespace APFood.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
 
-        public async Task<IActionResult> ManageVendors()
+        public async Task<IActionResult> Index()
         {
-            var vendors = await _context.FoodVendors
-                .Select(v => new FoodVendorViewModel
-                {
-                    Id = v.Id,
-                    StoreName = v.StoreName,
-                    UserName = v.UserName,
-                    Email = v.Email
-                }).ToListAsync();
+            var orders = await _context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Food)
+                .ToListAsync();
 
-            return View(vendors);
-        }
+            var processingCount = orders.Count(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Processing || o.Status == OrderStatus.Ready);
+            var completedCount = orders.Count(o => o.Status == OrderStatus.Completed);
+            var cancelledCount = orders.Count(o => o.Status == OrderStatus.Cancelled);
+            var totalRevenue = orders.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.Items.Sum(i => i.Quantity * i.Food.Price));
 
-        public IActionResult CreateVendor()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateVendor(FoodVendorRegistrationModel model)
-        {
-            if (ModelState.IsValid)
+            var recentOrders = orders.Take(10).Select(o => new AdminOrderViewModel
             {
-                var user = new FoodVendor
-                {
-                    StoreName = model.StoreName,
-                    Email = model.Email,
-                    UserName = model.Email
-                };
+                OrderId = o.Id,
+                CustomerName = o.Customer.FullName,
+                FoodItems = string.Join("<br> ", o.Items.Select(i => $"{i.Quantity} x {i.Food.Name}")),
+                DateTime = o.CreatedAt.ToString("dd MMM yyyy hh:mm tt"),
+                TotalPrice = o.Items.Sum(i => i.Quantity * i.Food.Price),
+                Status = o.Status.ToString()
+            }).ToList();
 
-                var result = await _registrationService.RegisterUserAsync(user, model, UserRole.FoodVendor);
-                if (result.Succeeded)
+            var model = new AdminDashboardViewModel
+            {
+                ProcessingCount = processingCount,
+                CompletedCount = completedCount,
+                CancelledCount = cancelledCount,
+                TotalRevenue = totalRevenue,
+                RecentOrders = recentOrders,
+                OrderCounts = new Dictionary<OrderStatus, int>
                 {
-                    return RedirectToAction(nameof(ManageVendors));
+                    { OrderStatus.Pending, orders.Count(o => o.Status == OrderStatus.Pending) },
+                    { OrderStatus.Processing, orders.Count(o => o.Status == OrderStatus.Processing) },
+                    { OrderStatus.Ready, orders.Count(o => o.Status == OrderStatus.Ready) },
+                    { OrderStatus.Completed, completedCount },
+                    { OrderStatus.Cancelled, cancelledCount }
                 }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-
-            return View(model);
-        }
-
-        public async Task<IActionResult> EditVendor(string id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var vendor = await _context.FoodVendors.FindAsync(id);
-            if (vendor == null)
-            {
-                return NotFound();
-            }
-
-            var model = new FoodVendorViewModel
-            {
-                Id = vendor.Id,
-                StoreName = vendor.StoreName,
-                UserName = vendor.UserName,
-                Email = vendor.Email
             };
 
             return View(model);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> EditVendor(FoodVendorViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var vendor = await _context.FoodVendors.FindAsync(model.Id);
-                if (vendor == null)
-                {
-                    return NotFound();
-                }
-
-                vendor.StoreName = model.StoreName;
-                vendor.UserName = model.UserName;
-                vendor.Email = model.Email;
-
-                _context.Update(vendor);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(ManageVendors));
-            }
-
-            return View(model);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteVendor(string id)
-        {
-            var vendor = await _context.FoodVendors.FindAsync(id);
-            if (vendor != null)
-            {
-                _context.FoodVendors.Remove(vendor);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(ManageVendors));
-        }
     }
 }
