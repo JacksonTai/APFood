@@ -14,8 +14,11 @@ namespace APFood.Services.Contract
         Task CancelOrder(int orderId);
         Task<Order?> GetOrderByIdAsync(int orderId);
         Task<List<OrderListViewModel>> GetOrdersByStatusAsync(OrderStatus status, string userId);
+        Task<List<OrderListViewModel>> GetOrdersByStatusAdminAsync(OrderStatus status);
         Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync(string userId);
+        Task<Dictionary<OrderStatus, int>> GetOrderCountsAdminAsync();
         Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId, string userId);
+        Task<OrderDetailViewModel?> GetOrderDetailAdminAsync(int orderId);
         OrderSummaryModel CalculateOrderSummary(Cart cart, CartFormModel cartForm);
     }
 }

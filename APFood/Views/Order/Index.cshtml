@@ -11,12 +11,15 @@
     <div class="row mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="text-start fs-2">Delivery Task</h1>
-            <div class="d-flex align-items-center">
-                <i class="fa-regular fa-circle-question d-block me-2" data-toggle="tooltip" data-placement="left"
-                   title="The runner points can be earned by delivering food order and can be used to offset your
-                  payment amount when buying food"></i>
-                <p class="mb-0">Total Runner Points Spent: <strong>@Model.TotalPointsSpent</strong></p>
-            </div>
+            @if (!Model.IsAdmin)
+            {
+                <div class="d-flex align-items-center">
+                    <i class="fa-regular fa-circle-question d-block me-2" data-toggle="tooltip" data-placement="left"
+                       title="The runner points can be earned by delivering food order and can be used to offset your
+                      payment amount when buying food"></i>
+                    <p class="mb-0">Total Runner Points Spent: <strong>@Model.TotalPointsSpent</strong></p>
+                </div>
+            }
         </div>
     </div>
     <div class="card">

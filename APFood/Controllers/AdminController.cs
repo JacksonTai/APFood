@@ -18,7 +18,6 @@ namespace APFood.Controllers
             _context = context;
         }
 
-
         public async Task<IActionResult> Index()
         {
             var orders = await _context.Orders
