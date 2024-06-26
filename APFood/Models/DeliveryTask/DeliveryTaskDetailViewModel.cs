@@ -17,5 +17,6 @@ namespace APFood.Models.DeliveryTask
         public required bool IsAcceptableDeliveryTask { get; set; }
         public required bool IsDeliverableDeliveryTask { get; set; }
         public required bool IsCancellableDeliveryTask { get; set; }
+        public bool IsAdmin { get; set; }
     }
 }

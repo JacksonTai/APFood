@@ -66,6 +66,41 @@ namespace APFood.Services
             }).ToListAsync();
         }
 
+        public async Task<List<DeliveryTaskListViewModel>> GetDeliveryTasksByStatusAdminAsync(DeliveryStatus status)
+        {
+            IQueryable<DeliveryTask> query = _context.DeliveryTasks
+                .Include(dt => dt.Order.Customer)
+                .Include(dt => dt.Order.Items)
+                .Include(dt => dt.RunnerDeliveryTasks);
+
+            if (status == DeliveryStatus.Pending)
+            {
+                query = query.Where(dt =>
+                    (dt.Order.Status == OrderStatus.Processing || dt.Order.Status == OrderStatus.Ready) &&
+                    (dt.Status == DeliveryStatus.Pending ||
+                     dt.Status == DeliveryStatus.Cancelled && !dt.RunnerDeliveryTasks.Any(rdt => rdt.Status == DeliveryStatus.Cancelled)));
+            }
+            else
+            {
+                query = query.Where(dt => dt.Status == status);
+            }
+
+            return await query.Select(dt => new DeliveryTaskListViewModel
+            {
+                DeliveryTaskId = dt.Id,
+                DeliveryLocation = dt.Location,
+                DeliveryStatus = dt.Status,
+                CustomerName = dt.Order.Customer.FullName,
+                QueueNumber = dt.Order.QueueNumber,
+                OrderId = dt.Order.Id,
+                OrderStatus = dt.Order.Status,
+                OrderTime = dt.Order.CreatedAt,
+                IsAcceptableDeliveryTask = false,
+                IsDeliverableDeliveryTask = false,
+                IsCancellableDeliveryTask = false
+            }).ToListAsync();
+        }
+
         public async Task<Dictionary<DeliveryStatus, int>> GetDeliveryTaskCountsAsync(string currentUserId)
         {
             Dictionary<DeliveryStatus, int> deliveryTaskCounts = [];
@@ -90,6 +125,31 @@ namespace APFood.Services
                 }
                 
             }
+            return deliveryTaskCounts;
+        }
+
+        public async Task<Dictionary<DeliveryStatus, int>> GetDeliveryTaskCountsAdminAsync()
+        {
+            Dictionary<DeliveryStatus, int> deliveryTaskCounts = new Dictionary<DeliveryStatus, int>();
+
+            IQueryable<DeliveryTask> query = _context.DeliveryTasks;
+
+            deliveryTaskCounts[DeliveryStatus.Pending] = await query
+                .Where(dt => (dt.Order.Status == OrderStatus.Processing || dt.Order.Status == OrderStatus.Ready) &&
+                             dt.Status == DeliveryStatus.Pending ||
+                            dt.Status == DeliveryStatus.Cancelled)
+                .CountAsync();
+
+            foreach (DeliveryStatus status in Enum.GetValues(typeof(DeliveryStatus)).Cast<DeliveryStatus>())
+            {
+                if (status != DeliveryStatus.Pending)
+                {
+                    deliveryTaskCounts[status] = await query
+                        .Where(dt => dt.Status == status)
+                        .CountAsync();
+                }
+            }
+
             return deliveryTaskCounts;
         }
 
@@ -127,6 +187,39 @@ namespace APFood.Services
                     IsAcceptableDeliveryTask = IsAcceptableDeliveryTask(deliveryTask, currentUserId),
                     IsDeliverableDeliveryTask = IsDeliverableDeliveryTask(deliveryTask, currentUserId),
                     IsCancellableDeliveryTask = IsCancellableDeliveryTask(deliveryTask, currentUserId)
+                };
+            }
+            return deliveryTaskDetailView;
+        }
+
+        public async Task<DeliveryTaskDetailViewModel?> GetDeliveryTaskDetailAdminAsync(int deliveryTaskId)
+        {
+            DeliveryTaskDetailViewModel? deliveryTaskDetailView = null;
+            IQueryable<DeliveryTask> query = _context.DeliveryTasks
+                .Include(dt => dt.Order)
+                .Include(dt => dt.Order.Items)
+                .ThenInclude(oi => oi.Food)
+                .Include(dt => dt.Order.Customer)
+                .Include(dt => dt.RunnerDeliveryTasks)
+                .Where(dt => dt.Id == deliveryTaskId);
+
+            DeliveryTask? deliveryTask = await query.FirstOrDefaultAsync();
+            if (deliveryTask != null)
+            {
+                deliveryTaskDetailView = new DeliveryTaskDetailViewModel
+                {
+                    DeliveryTaskId = deliveryTask.Id,
+                    DeliveryLocation = deliveryTask.Location,
+                    DeliveryStatus = deliveryTask.Status,
+                    QueueNumber = deliveryTask.Order.QueueNumber,
+                    CustomerName = deliveryTask.Order.Customer.FullName,
+                    OrderId = deliveryTask.Order.Id,
+                    OrderStatus = deliveryTask.Order.Status,
+                    OrderTime = deliveryTask.Order.CreatedAt,
+                    Items = deliveryTask.Order.Items,
+                    IsAcceptableDeliveryTask = false,
+                    IsDeliverableDeliveryTask = false,
+                    IsCancellableDeliveryTask = false
                 };
             }
             return deliveryTaskDetailView;

@@ -42,25 +42,28 @@
         }
         <hr class="mb-4">
     </ul>
-    @if (Model.IsAcceptableDeliveryTask)
+    @if (!Model.IsAdmin)
     {
-        <form method="post" asp-controller="DeliveryTask" asp-action="AcceptDeliveryTask">
-            <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
-            <button type="submit" class="btn btn-success w-100 mt-2">Accept</button>
-        </form>
-    }
-    @if (Model.IsDeliverableDeliveryTask)
-    {
-        <form method="post" asp-controller="DeliveryTask" asp-action="DeliverDeliveryTask">
-            <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
-            <button type="submit" class="btn btn-success w-100 mt-2">Delivered</button>
-        </form>
-    }
-    @if (Model.IsCancellableDeliveryTask)
-    {
-        <form method="post" asp-controller="DeliveryTask" asp-action="CancelDeliveryTask">
-            <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
-            <button type="submit" class="btn btn-danger w-100 mt-2">Cancel</button>
-        </form>
+        @if (Model.IsAcceptableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="AcceptDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-success w-100 mt-2">Accept</button>
+            </form>
+        }
+        @if (Model.IsDeliverableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="DeliverDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-success w-100 mt-2">Delivered</button>
+            </form>
+        }
+        @if (Model.IsCancellableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="CancelDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-danger w-100 mt-2">Cancel</button>
+            </form>
+        }
     }
 </div>
