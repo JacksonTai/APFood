@@ -10,8 +10,8 @@ namespace APFood.Data
         public required Customer Customer { get; set; }
         public Payment? Payment { get; set; }
         public required List<OrderItem> Items { get; set; }
-        public OrderStatus Status { get; set; } = OrderStatus.Pending;
-        public DineInOption DineInOption { get; set; } = DineInOption.Pickup;
+        public required OrderStatus Status { get; set; } = OrderStatus.Pending;
+        public required DineInOption DineInOption { get; set; } = DineInOption.Pickup;
         public int QueueNumber { get; set; }
         public DateTime CreatedAt { get; set; }
     }

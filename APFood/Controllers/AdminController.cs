@@ -2,7 +2,7 @@
 
 namespace APFood.Controllers
 {
-    public class DeliveryTask : Controller
+    public class AdminController : Controller
     {
         public IActionResult Index()
         {

@@ -1,0 +1,84 @@
+﻿@using APFood.Constants
+@using APFood.Constants.Order
+@{
+    ViewData["Title"] = "Order #" + @Model.OrderId;
+}
+@model APFood.Models.Order.OrderDetailViewModel
+
+<div class="container my-5" style="max-width: 40rem">
+    <nav class="mt-5" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-controller="Order" asp-action="Index" asp-route-status="@Model.Status">Orders</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">#@Model.OrderId</li>
+        </ol>
+    </nav>
+    <h2 class="mb-3">Order ID: #@Model.OrderId</h2>
+    <hr class="mb-4">
+    <div class="d-flex justify-content-between lh-sm">
+        <div>
+            <p>Order Time: @Model.OrderTime</p>
+            <p>Order Status: <span class="badge bg-primary">@Model.Status</span></p>
+        </div>
+        <div>
+            <p>Queue No: @Model.QueueNumber</p>
+            <p>Dine-in Option: @Model.DineInOption</p>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.DeliveryLocation) || 
+         !string.IsNullOrEmpty(Model.DeliveryStatus.ToString()))
+    {
+        <div>
+            <hr class="mb-4">
+            <h5 class="mb-3">Delivery Information</h5>
+            <div>
+                <p>Location: @Model.DeliveryLocation</p>
+                <p>Runner: @(string.IsNullOrEmpty(Model.Runner) ? "-" : Model.Runner)</p>
+                <p>Status: <span class="badge bg-primary">@Model.DeliveryStatus</span></p>
+            </div>
+        </div>
+    }
+    <hr class="mb-4">
+    <ul class="list-group mb-0">
+        @foreach (var item in Model.Items)
+        {
+            <li class="d-flex justify-content-between lh-sm">
+                <P>@item.Food.Name x @item.Quantity</P>
+                <span>RM @(item.Food.Price * item.Quantity) </span>
+            </li>
+        }
+        <hr class="mb-4">
+        <li class="d-flex justify-content-between">
+            <P>Subtotal</P>
+            <p>@Model.OrderSummary.Subtotal.ToString("C")</p>
+        </li>
+        <li class="d-flex justify-content-between">
+            <P>Delivery Fee</P>
+            <P>@Model.OrderSummary.DeliveryFee.ToString("C")</P>
+        </li>
+        <li class="d-flex justify-content-between">
+            <P>Runner Points Redeemed</P>
+            <P>- @Model.OrderSummary.RunnerPointsRedeemed.ToString("C")</P>
+        </li>
+        <hr class="mb-4">
+        <li class="d-flex justify-content-between">
+            <h5>Total</h5>
+            <h5>@Model.OrderSummary.Total.ToString("C")</h5>
+        </li>
+    </ul>
+    @if (@Model.CanShowReceivedButton)
+    {
+        <form method="post" asp-controller="Order" asp-action="ReceiveOrder">
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
+            <button type="submit" class="btn btn-success w-100 mt-2">Order Received</button>
+        </form>
+    }
+    @if (@Model.CanShowCancelButton)
+    {
+        <form method="post" asp-controller="Order" asp-action="CancelOrder">
+            <input type="hidden" name="orderId" value="@Model.OrderId" />
+            <button type="submit" class="btn btn-danger w-100 mt-2">Cancel Order</button>
+        </form>
+    }
+</div>

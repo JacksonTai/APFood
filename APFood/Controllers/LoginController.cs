@@ -1,29 +1,18 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Constants;
 using APFood.Models;
+using APFood.Services.Contract;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APFood.Controllers
 {
-    public class LoginController : Controller
+    public class LoginController(ILoginService loginService) : Controller
     {
-        private readonly SignInManager<APFoodUser> _signInManager;
-        private readonly UserManager<APFoodUser> _userManager;
-
-        public LoginController(SignInManager<APFoodUser> signInManager, UserManager<APFoodUser> userManager)
-        {
-            _signInManager = signInManager;
-            _userManager = userManager;
-        }
+        private readonly ILoginService _loginService = loginService;
 
         [HttpGet]
         public IActionResult Customer()
-        {
-            return View();
-        }
-
-        [HttpGet]
-        public IActionResult Runner()
         {
             return View();
         }
@@ -34,40 +23,45 @@ namespace APFood.Controllers
             return View();
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Customer(LoginModel loginModel)
+        [HttpGet]
+        public IActionResult Admin()
         {
-            return await LoginUser(loginModel, "Customer");
+            return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Runner(LoginModel loginModel)
+        public async Task<IActionResult> Customer(LoginModel loginModel)
         {
-            return await LoginUser(loginModel, "Runner");
+            return await LoginUser(loginModel, UserRole.Customer);
         }
 
         [HttpPost]
         public async Task<IActionResult> FoodVendor(LoginModel loginModel)
         {
-            return await LoginUser(loginModel, "Food Vendor");
+            return await LoginUser(loginModel, UserRole.FoodVendor);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Admin(LoginModel loginModel)
+        {
+            return await LoginUser(loginModel, UserRole.Admin);
         }
 
         private async Task<IActionResult> LoginUser(LoginModel loginModel, string role)
         {
-            APFoodUser? user = await _userManager.FindByEmailAsync(loginModel.Email);
-            if (user == null)
+            var result = await _loginService.LoginUserAsync(loginModel.Email, loginModel.Password, role);
+            if (result.Succeeded)
             {
-                ModelState.AddModelError(string.Empty, "Invalid email or password.");
-                return View();
-            }
-
-            // Check if the user has the expected role
-            if (await _userManager.IsInRoleAsync(user, role))
-            {
-                var result = await _signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, lockoutOnFailure: false);
-                if (result.Succeeded)
+                switch (role)
                 {
-                    return RedirectToAction("Index", "Home");
+                    case UserRole.Customer:
+                        return RedirectToAction("Index", "Customer");
+                    case UserRole.FoodVendor:
+                        return RedirectToAction("Index", "FoodVendor");
+                    case UserRole.Admin:
+                        return RedirectToAction("Index", "Admin");
+                    default:
+                        return RedirectToAction("Index", "Home");
                 }
             }
             ModelState.AddModelError(string.Empty, "Invalid email or password.");

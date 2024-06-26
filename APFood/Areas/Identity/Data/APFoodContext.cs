@@ -3,6 +3,8 @@ using APFood.Constants;
 using APFood.Constants.Order;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
+using System.Text;
 
 namespace APFood.Data;
 
@@ -10,7 +12,6 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
 {
     public DbSet<FoodVendor> FoodVendors { get; set; }
     public DbSet<Customer> Customers { get; set; }
-    public DbSet<Runner> Runners { get; set; }
     public DbSet<Food> Foods { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
@@ -25,42 +26,39 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
         base.OnModelCreating(builder);
 
         builder.Entity<FoodVendor>()
-                   .ToTable("FoodVendors")
-                   .HasBaseType<APFoodUser>();
+            .ToTable("FoodVendors")
+            .HasBaseType<APFoodUser>();
 
-        builder.Entity<Runner>()
-           .ToTable("Runners")
-           .HasBaseType<APFoodUser>()
-           .Property(r => r.Points)
-           .HasPrecision(18, 2);
-
-        // Customer
+    // Customer
         builder.Entity<Customer>()
-               .ToTable("Customers")
-               .HasBaseType<APFoodUser>();
+            .ToTable("Customers")
+            .HasBaseType<APFoodUser>();
 
         builder.Entity<Customer>()
-              .HasOne(c => c.Cart)
-              .WithOne(c => c.Customer)
-              .HasForeignKey<Customer>(c => c.CartId);
+            .HasOne(c => c.Cart)
+            .WithOne(c => c.Customer)
+            .HasForeignKey<Customer>(c => c.CartId);
 
-        // Food
+        builder.Entity<Customer>()
+            .Property(r => r.Points)
+            .HasPrecision(18, 2);
+
+    // Food
         builder.Entity<Food>()
-          .Property(f => f.Price)
-          .HasPrecision(18, 2);
-
-        // Cart
+            .Property(f => f.Price)
+            .HasPrecision(18, 2);
+    // Cart
         builder.Entity<Cart>()
-                 .HasMany(c => c.Items)
-                 .WithOne(ci => ci.Cart)
-                 .HasForeignKey(ci => ci.CartId);
+            .HasMany(c => c.Items)
+            .WithOne(ci => ci.Cart)
+            .HasForeignKey(ci => ci.CartId);
 
         builder.Entity<CartItem>()
             .HasOne(ci => ci.Food)
             .WithMany()
             .HasForeignKey(ci => ci.FoodId);
 
-        // Order
+    // Order
         builder.Entity<Order>()
             .HasOne(o => o.Customer)
             .WithMany()
@@ -84,7 +82,7 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .StartsAt(1)
             .IncrementsBy(1);
 
-        // Order Item
+    // Order Item
         builder.Entity<OrderItem>()
             .HasOne(oi => oi.Food)
             .WithMany()
@@ -95,7 +93,7 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .WithMany(o => o.Items)
             .HasForeignKey(oi => oi.OrderId);
 
-        // Payment
+    // Payment
         builder.Entity<Payment>()
             .HasOne(p => p.Order)
             .WithOne(o => o.Payment)
@@ -121,27 +119,23 @@ public class APFoodContext(DbContextOptions<APFoodContext> options) : IdentityDb
             .Property(p => p.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
 
-        // DeliveryTask
+    // DeliveryTask
         builder.Entity<DeliveryTask>()
-           .HasOne(dt => dt.Order)
-           .WithOne()
-           .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
+            .HasOne(dt => dt.Order)
+            .WithOne()
+            .HasForeignKey<DeliveryTask>(dt => dt.OrderId);
 
-        builder.Entity<DeliveryTask>()
-            .Property(dt => dt.Status)
-            .HasConversion<string>()
-            .HasDefaultValue(DeliveryStatus.Pending);
+        builder.Entity<RunnerDeliveryTask>()
+            .HasKey(rdt => new { rdt.DeliveryTaskId, rdt.RunnerId });
+
+        builder.Entity<RunnerDeliveryTask>()
+            .HasOne(rdt => rdt.DeliveryTask)
+            .WithMany(dt => dt.RunnerDeliveryTasks)
+            .HasForeignKey(rdt => rdt.DeliveryTaskId);
 
         builder.Entity<RunnerDeliveryTask>()
             .HasOne(rdt => rdt.Runner)
             .WithMany()
-            .HasForeignKey(rdt => rdt.RunnerId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.Entity<RunnerDeliveryTask>()
-            .HasOne(rdt => rdt.DeliveryTask)
-            .WithMany()
-            .HasForeignKey(rdt => rdt.DeliveryTaskId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .HasForeignKey(rdt => rdt.RunnerId);
     }
 }

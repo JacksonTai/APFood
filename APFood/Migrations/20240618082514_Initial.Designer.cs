@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APFood.Migrations
 {
     [DbContext(typeof(APFoodContext))]
-    [Migration("20240617012710_Initial")]
+    [Migration("20240618082514_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -145,23 +145,23 @@ namespace APFood.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CustomerId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("OrderId")
+                    b.Property<int?>("OrderId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Pending");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId");
+
                     b.HasIndex("OrderId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[OrderId] IS NOT NULL");
 
                     b.ToTable("DeliveryTasks");
                 });
@@ -207,9 +207,9 @@ namespace APFood.Migrations
                     b.Property<int>("DineInOption")
                         .HasColumnType("int");
 
-                    b.Property<string>("QueueNumber")
+                    b.Property<int>("QueueNumber")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("int")
                         .HasDefaultValueSql("NEXT VALUE FOR QueueNumberSequence");
 
                     b.Property<int>("Status")
@@ -290,22 +290,16 @@ namespace APFood.Migrations
 
             modelBuilder.Entity("APFood.Data.RunnerDeliveryTask", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<int>("DeliveryTaskId")
                         .HasColumnType("int");
 
                     b.Property<string>("RunnerId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
-                    b.HasIndex("DeliveryTaskId");
+                    b.HasKey("DeliveryTaskId", "RunnerId");
 
                     b.HasIndex("RunnerId");
 
@@ -460,6 +454,10 @@ namespace APFood.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("Points")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasIndex("CartId")
                         .IsUnique()
                         .HasFilter("[CartId] IS NOT NULL");
@@ -476,17 +474,6 @@ namespace APFood.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.ToTable("FoodVendors", (string)null);
-                });
-
-            modelBuilder.Entity("APFood.Areas.Identity.Data.Runner", b =>
-                {
-                    b.HasBaseType("APFood.Areas.Identity.Data.APFoodUser");
-
-                    b.Property<decimal?>("Points")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.ToTable("Runners", (string)null);
                 });
 
             modelBuilder.Entity("APFood.Data.CartItem", b =>
@@ -510,11 +497,13 @@ namespace APFood.Migrations
 
             modelBuilder.Entity("APFood.Data.DeliveryTask", b =>
                 {
+                    b.HasOne("APFood.Areas.Identity.Data.Customer", null)
+                        .WithMany("DeliveryTasks")
+                        .HasForeignKey("CustomerId");
+
                     b.HasOne("APFood.Data.Order", "Order")
                         .WithOne()
-                        .HasForeignKey("APFood.Data.DeliveryTask", "OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("APFood.Data.DeliveryTask", "OrderId");
 
                     b.Navigation("Order");
                 });
@@ -563,15 +552,15 @@ namespace APFood.Migrations
             modelBuilder.Entity("APFood.Data.RunnerDeliveryTask", b =>
                 {
                     b.HasOne("APFood.Data.DeliveryTask", "DeliveryTask")
-                        .WithMany()
+                        .WithMany("runnerDeliveryTasks")
                         .HasForeignKey("DeliveryTaskId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("APFood.Areas.Identity.Data.Customer", "Runner")
                         .WithMany()
                         .HasForeignKey("RunnerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DeliveryTask");
@@ -654,15 +643,6 @@ namespace APFood.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("APFood.Areas.Identity.Data.Runner", b =>
-                {
-                    b.HasOne("APFood.Areas.Identity.Data.APFoodUser", null)
-                        .WithOne()
-                        .HasForeignKey("APFood.Areas.Identity.Data.Runner", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("APFood.Data.Cart", b =>
                 {
                     b.Navigation("Customer")
@@ -671,11 +651,21 @@ namespace APFood.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("APFood.Data.DeliveryTask", b =>
+                {
+                    b.Navigation("runnerDeliveryTasks");
+                });
+
             modelBuilder.Entity("APFood.Data.Order", b =>
                 {
                     b.Navigation("Items");
 
                     b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("APFood.Areas.Identity.Data.Customer", b =>
+                {
+                    b.Navigation("DeliveryTasks");
                 });
 #pragma warning restore 612, 618
         }
