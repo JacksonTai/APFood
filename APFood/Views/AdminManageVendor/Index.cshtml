@@ -1,0 +1,37 @@
+﻿@model IEnumerable<APFood.Models.Admin.FoodVendorViewModel>
+
+@{
+    ViewData["Title"] = "Admin Manage Vendor";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Manage Vendors</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Store Name</th>
+            <th>User Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var vendor in Model)
+        {
+            <tr>
+                <td>@vendor.StoreName</td>
+                <td>@vendor.UserName</td>
+                <td>@vendor.Email</td>
+                <td>
+                    <a asp-action="EditVendor" asp-route-id="@vendor.Id" class="btn btn-primary">Edit</a>
+                    <form asp-action="DeleteVendor" asp-route-id="@vendor.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="CreateVendor" class="btn btn-primary">Create New Vendor</a>
