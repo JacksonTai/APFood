@@ -10,9 +10,12 @@ using System.Linq;
 using APFood.Constants.Food;
 using Microsoft.EntityFrameworkCore;
 using APFood.Constants.Order;
+using APFood.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = $"{UserRole.FoodVendor}")]
     public class FoodController : Controller
     {
         private readonly APFoodContext _context;

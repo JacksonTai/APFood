@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using APFood.Data;
 using APFood.Areas.Identity.Data;
 using APFood.Services;
+using APFood.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("APFoodContextConnection") ?? throw new InvalidOperationException("Connection string 'APFoodContextConnection' not found.");
@@ -30,6 +31,13 @@ builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, PaymentServ
 builder.Services.AddScoped<APFood.Services.Contract.IOrderService, OrderService>();
 builder.Services.AddScoped<APFood.Services.Contract.IDeliveryTaskService, DeliveryTaskService>();
 builder.Services.AddScoped<SessionManager>();
+builder.Services.AddScoped<LoginRedirectionHandler>();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // Default path
+    options.LoginPath = "/"; 
+    options.EventsType = typeof(LoginRedirectionHandler);
+});
 
 var app = builder.Build();
 

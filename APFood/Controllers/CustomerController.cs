@@ -1,14 +1,17 @@
 ﻿using APFood.Areas.Identity.Data;
+using APFood.Constants;
 using APFood.Constants.Food;
 using APFood.Data;
 using APFood.Models.Customer;
 using APFood.Services.Contract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = $"{UserRole.Customer}")]
     public class CustomerController : Controller
     {
         private readonly APFoodContext _context;
