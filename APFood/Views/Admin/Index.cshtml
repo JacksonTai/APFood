@@ -1,5 +1,79 @@
-﻿@{
-    ViewData["Title"] = "Admin Dashboard";
+﻿@model APFood.Models.Admin.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Welcome, Admin!</h1>
+<div class="container my-5">
+    <div class="row mb-4">
+        <h1 class="text-start fs-2">Welcome, Admin</h1>
+    </div>
+    <div class="row text-center mb-4">
+        <div class="col-md-3">
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>@Model.ProcessingCount</h2>
+                    <h4>Processing</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>@Model.CompletedCount</h2>
+                    <h4>Completed</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>@Model.CancelledCount</h2>
+                    <h4>Cancelled</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100">
+                <div class="card-body text-black d-flex flex-column align-items-center">
+                    <h2>RM @Model.TotalRevenue</h2>
+                    <h4>Total Revenue</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Recent Orders</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Food Items</th>
+                        <th>Date/Time</th>
+                        <th>Total Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.RecentOrders)
+                    {
+                        <tr>
+                            <td>@order.OrderId</td>
+                            <td>@order.CustomerName</td>
+                            <td>@Html.Raw(order.FoodItems)</td>
+                            <td>@order.DateTime</td>
+                            <td>RM @order.TotalPrice</td>
+                            <td>@order.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

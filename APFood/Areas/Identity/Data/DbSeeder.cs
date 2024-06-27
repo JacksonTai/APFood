@@ -28,7 +28,7 @@ namespace APFood.Areas.Identity.Data
 
         private static async Task SeedSuperAdminAsync(UserManager<APFoodUser> userManager)
         {
-            string email = "admin.apfood@apu.edu.my";
+            string email = "admin.apfood@mail.apu.edu.my";
             string password = "Admin@123";
 
             var superadmin = await userManager.FindByEmailAsync(email);

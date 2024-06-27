@@ -120,6 +120,32 @@ namespace APFood.Services
                 }).ToListAsync();
         }
 
+        public async Task<List<OrderListViewModel>> GetOrdersByStatusAdminAsync(OrderStatus status)
+        {
+            return await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Food)
+                .Where(o => o.Status == status)
+                .OrderByDescending(o => o.CreatedAt)
+                .Select(o => new OrderListViewModel
+                {
+                    OrderId = o.Id,
+                    OrderTime = o.CreatedAt,
+                    QueueNumber = o.QueueNumber,
+                    DineInOption = o.DineInOption,
+                    OrderStatus = o.Status,
+                    TotalPaid = _context.Payments
+                        .Where(p => p.OrderId == o.Id)
+                        .Select(p => p.Total)
+                        .FirstOrDefault(),
+                    IsReceivableOrder = IsReceivableOrder(o.Status, _context.DeliveryTasks
+                        .Where(dt => dt.OrderId == o.Id)
+                        .Select(dt => dt.Status)
+                        .FirstOrDefault()),
+                    IsCancellableOrder = o.Status == OrderStatus.Pending
+                }).ToListAsync();
+        }
+
         public async Task<Dictionary<OrderStatus, int>> GetOrderCountsAsync(string userId)
         {
             Dictionary<OrderStatus, int> orderCounts = Enum.GetValues(typeof(OrderStatus))
@@ -143,12 +169,80 @@ namespace APFood.Services
             return orderCounts;
         }
 
+        public async Task<Dictionary<OrderStatus, int>> GetOrderCountsAdminAsync()
+        {
+            Dictionary<OrderStatus, int> orderCounts = Enum.GetValues(typeof(OrderStatus))
+               .Cast<OrderStatus>()
+               .ToDictionary(status => status, status => 0);
+
+            var dbCounts = await _context.Orders
+                .GroupBy(o => o.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            foreach (var dbCount in dbCounts)
+            {
+                if (orderCounts.ContainsKey(dbCount.Status))
+                {
+                    orderCounts[dbCount.Status] = dbCount.Count;
+                }
+            }
+
+            return orderCounts;
+        }
+
         public async Task<OrderDetailViewModel?> GetOrderDetailAsync(int orderId, string userId)
         {
             Order order = await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(oi => oi.Food)
                 .Where(o => o.CustomerId == userId)
+                .FirstOrDefaultAsync(o => o.Id == orderId) ?? throw new Exception("Order not found");
+
+            Payment? payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId)
+              ?? throw new Exception("Payment not found");
+
+            DeliveryTask? deliveryTask = await _context.DeliveryTasks
+                .FirstOrDefaultAsync(dt => dt.OrderId == orderId);
+
+            RunnerDeliveryTask? runnerDeliveryTask = deliveryTask != null
+                ? await _context.RunnerDeliveryTasks
+                    .Include(rdt => rdt.Runner)
+                    .Where(rdt => rdt.DeliveryTaskId == deliveryTask.Id)
+                    .Where(rdt => rdt.Status != DeliveryStatus.Cancelled)
+                    .FirstOrDefaultAsync()
+                : null;
+
+            OrderDetailViewModel orderDetailViewModel = new()
+            {
+                OrderId = order.Id,
+                Status = order.Status,
+                OrderTime = order.CreatedAt,
+                DineInOption = order.DineInOption,
+                QueueNumber = order.QueueNumber,
+                Items = order.Items,
+                OrderSummary = new OrderSummaryModel
+                {
+                    Subtotal = order.Items.Sum(item => item.Quantity * item.Food.Price),
+                    DeliveryFee = payment.DeliveryFee,
+                    RunnerPointsRedeemed = payment.RunnerPointsUsed,
+                    Total = payment.Total
+                },
+                DeliveryLocation = deliveryTask?.Location,
+                DeliveryStatus = deliveryTask?.Status,
+                Runner = runnerDeliveryTask?.Runner?.FullName,
+                IsReceivableOrder = IsReceivableOrder(order.Status, deliveryTask?.Status),
+                IsCancellableOrder = order.Status == OrderStatus.Pending
+            };
+
+            return orderDetailViewModel;
+        }
+
+        public async Task<OrderDetailViewModel?> GetOrderDetailAdminAsync(int orderId)
+        {
+            Order order = await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(oi => oi.Food)
                 .FirstOrDefaultAsync(o => o.Id == orderId) ?? throw new Exception("Order not found");
 
             Payment? payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId)
