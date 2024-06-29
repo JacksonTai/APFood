@@ -1,8 +1,6 @@
-﻿using APFood.Areas.Identity.Data;
-using APFood.Constants;
+﻿using APFood.Constants;
 using APFood.Models;
 using APFood.Services.Contract;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APFood.Controllers
@@ -52,17 +50,17 @@ namespace APFood.Controllers
             var result = await _loginService.LoginUserAsync(loginModel.Email, loginModel.Password, role);
             if (result.Succeeded)
             {
-                switch (role)
+                return role switch
                 {
-                    case UserRole.Customer:
-                        return RedirectToAction("Index", "Customer");
-                    case UserRole.FoodVendor:
-                        return RedirectToAction("Index", "FoodVendor");
-                    case UserRole.Admin:
-                        return RedirectToAction("Index", "Admin");
-                    default:
-                        return RedirectToAction("Index", "Home");
-                }
+                    UserRole.Customer => RedirectToAction("Index", "Customer"),
+                    UserRole.FoodVendor => RedirectToAction("Index", "FoodVendor"),
+                    UserRole.Admin => RedirectToAction("Index", "Admin"),
+                    _ => RedirectToAction("Index", "Home"),
+                };
+            }
+            if (result.RequiresTwoFactor)
+            {
+                return RedirectToPage("/Account/LoginWith2fa", new { area = "Identity" });
             }
             ModelState.AddModelError(string.Empty, "Invalid email or password.");
             return View();
