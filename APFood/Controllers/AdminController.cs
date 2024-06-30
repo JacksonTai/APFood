@@ -1,12 +1,15 @@
-﻿using APFood.Constants.Order;
+using APFood.Constants;
+using APFood.Constants.Order;
 using APFood.Data;
 using APFood.Models.Admin;
 using APFood.Services.Contract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = $"{UserRole.Admin}")]
     public class AdminController : Controller
     {
         private readonly IRegisterService _registrationService;
