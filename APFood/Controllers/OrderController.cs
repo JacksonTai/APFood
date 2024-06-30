@@ -2,31 +2,58 @@
 using APFood.Constants.Order;
 using APFood.Models.Order;
 using APFood.Services.Contract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = $"{UserRole.Customer},{UserRole.Admin}")]
     [Route("[controller]")]
-    public class OrderController(
-        IOrderService orderService,
-        ILogger<OrderController> logger
-        ) : Controller
+    public class OrderController : Controller
     {
-        private readonly IOrderService _orderService = orderService;
-        private readonly ILogger<OrderController> _logger = logger;
+        private readonly IOrderService _orderService;
+        private readonly IRunnerPointService _runnerPointService;
+        private readonly ILogger<OrderController> _logger;
+
+        public OrderController(
+            IOrderService orderService,
+            IRunnerPointService runnerPointService,
+            ILogger<OrderController> logger
+        )
+        {
+            _orderService = orderService;
+            _runnerPointService = runnerPointService;
+            _logger = logger;
+        }
 
         [HttpGet]
         public async Task<IActionResult> Index(OrderStatus status = OrderStatus.Pending)
         {
+            string userId = GetUserId();
+            bool isAdmin = User.IsInRole(UserRole.Admin);
             try
             {
-                List<OrderListViewModel> orders = await _orderService.GetOrdersByStatusAsync(status);
-                Dictionary<OrderStatus, int> orderCounts = await _orderService.GetOrderCountsAsync();
+                List<OrderListViewModel> orders;
+                Dictionary<OrderStatus, int> orderCounts;
+                if (isAdmin)
+                {
+                    orders = await _orderService.GetOrdersByStatusAdminAsync(status);
+                    orderCounts = await _orderService.GetOrderCountsAdminAsync();
+                }
+                else
+                {
+                    orders = await _orderService.GetOrdersByStatusAsync(status, userId);
+                    orderCounts = await _orderService.GetOrderCountsAsync(userId);
+                }
+
                 return View(new OrderViewModel
                 {
                     OrderList = orders,
                     OrderCounts = orderCounts,
-                    CurrentStatus = status
+                    CurrentStatus = status,
+                    TotalPointsSpent = isAdmin ? 0 : await _runnerPointService.GetTotalSpent(userId),
+                    IsAdmin = isAdmin
                 });
             }
             catch (Exception ex)
@@ -39,10 +66,19 @@ namespace APFood.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Detail(int id)
         {
+            bool isAdmin = User.IsInRole(UserRole.Admin);
             try
             {
-                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id);
-                return orderDetail == null ? NotFound() : View(orderDetail);
+                if (isAdmin)
+                {
+                    OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAdminAsync(id);
+                    return orderDetail == null ? NotFound() : View(orderDetail);
+                }
+                else
+                {
+                    OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id, GetUserId());
+                    return orderDetail == null ? NotFound() : View(orderDetail);
+                }
             }
             catch (Exception ex)
             {
@@ -81,5 +117,9 @@ namespace APFood.Controllers
             }
         }
 
+        private string GetUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("User not authenticated.");
+        }
     }
 }

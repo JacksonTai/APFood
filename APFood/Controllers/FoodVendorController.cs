@@ -11,9 +11,12 @@ using APFood.Constants.Order;
 using APFood.Models.Order;
 using APFood.Models.FoodVendor;
 using Microsoft.Extensions.Logging;
+using APFood.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace APFood.Controllers
 {
+    [Authorize(Roles = $"{UserRole.FoodVendor}")]
     public class FoodVendorController : Controller
     {
         private readonly APFoodContext _context;
@@ -60,7 +63,8 @@ namespace APFood.Controllers
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
                     Price = oi.Food.Price,
-                    Status = o.Status.ToString()  // Set Status property
+                    Status = o.Status.ToString(),
+                    DineInOption = o.DineInOption
                 }))
                 .ToList();
 
@@ -77,7 +81,8 @@ namespace APFood.Controllers
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
                     Price = oi.Food.Price,
-                    Status = o.Status.ToString()  // Set Status property
+                    Status = o.Status.ToString(),
+                    DineInOption = o.DineInOption
                 }))
                 .ToList();
 
@@ -94,7 +99,8 @@ namespace APFood.Controllers
                     Quantity = oi.Quantity,
                     DateTime = o.CreatedAt.ToString("dd MMMM yyyy hh:mm tt"),
                     Price = oi.Food.Price,
-                    Status = o.Status.ToString()  // Set Status property
+                    Status = o.Status.ToString(),
+                    DineInOption = o.DineInOption
                 }))
                 .ToList();
 
@@ -111,13 +117,13 @@ namespace APFood.Controllers
                 CompletedOrders = completedOrders,
                 CancelledOrders = cancelledOrders,
                 OrderCounts = new Dictionary<OrderStatus, int>
-                {
-                    { OrderStatus.Pending, orders.Count(o => o.Status == OrderStatus.Pending) },
-                    { OrderStatus.Processing, orders.Count(o => o.Status == OrderStatus.Processing) },
-                    { OrderStatus.Ready, orders.Count(o => o.Status == OrderStatus.Ready) },
-                    { OrderStatus.Completed, orders.Count(o => o.Status == OrderStatus.Completed) },
-                    { OrderStatus.Cancelled, orders.Count(o => o.Status == OrderStatus.Cancelled) }
-                }
+        {
+            { OrderStatus.Pending, orders.Count(o => o.Status == OrderStatus.Pending) },
+            { OrderStatus.Processing, orders.Count(o => o.Status == OrderStatus.Processing) },
+            { OrderStatus.Ready, orders.Count(o => o.Status == OrderStatus.Ready) },
+            { OrderStatus.Completed, orders.Count(o => o.Status == OrderStatus.Completed) },
+            { OrderStatus.Cancelled, orders.Count(o => o.Status == OrderStatus.Cancelled) }
+        }
             };
 
             return View(model);

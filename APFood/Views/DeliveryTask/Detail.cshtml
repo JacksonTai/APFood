@@ -1,0 +1,69 @@
+﻿@{
+    ViewData["Title"] = "Delivery Task #" + @Model.OrderId;
+}
+@model APFood.Models.DeliveryTask.DeliveryTaskDetailViewModel
+<div class="container my-5" style="max-width: 40rem">
+    <nav class="mt-5" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-controller="DeliveryTask" asp-action="Index" asp-route-status="@Model.DeliveryStatus">
+                    Delivery Tasks
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">#@Model.DeliveryTaskId</li>
+        </ol>
+    </nav>
+    <h2 class="mb-3">Delivery Task ID: #@Model.DeliveryTaskId</h2>
+    <hr class="mb-4">
+    <div class="d-flex justify-content-between lh-sm">
+        <div>
+            <p>Order Time: @Model.OrderTime</p>
+            <p>Order Status: <span class="badge bg-primary">@Model.OrderStatus</span></p>
+        </div>
+        <p>Queue No: @Model.QueueNumber</p>
+    </div>
+    <div>
+        <hr class="mb-4">
+        <h5 class="mb-3">Delivery Information</h5>
+        <div>
+            <p>Location: @Model.DeliveryLocation</p>
+            <p>Customer: @Model.CustomerName</p>
+            <p>Status: <span class="badge bg-primary">@Model.DeliveryStatus</span></p>
+        </div>
+    </div>
+    <hr class="mb-4">
+    <h5 class="mb-3">Order Items</h5>
+    <ul class="list-group mb-0">
+        @foreach (var item in Model.Items)
+        {
+            <li class="d-flex justify-content-between lh-sm">
+                <p>@item.Food.Name x @item.Quantity</p>
+            </li>
+        }
+        <hr class="mb-4">
+    </ul>
+    @if (!Model.IsAdmin)
+    {
+        @if (Model.IsAcceptableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="AcceptDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-success w-100 mt-2">Accept</button>
+            </form>
+        }
+        @if (Model.IsDeliverableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="DeliverDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-success w-100 mt-2">Delivered</button>
+            </form>
+        }
+        @if (Model.IsCancellableDeliveryTask)
+        {
+            <form method="post" asp-controller="DeliveryTask" asp-action="CancelDeliveryTask">
+                <input type="hidden" name="deliveryTaskId" value="@Model.DeliveryTaskId" />
+                <button type="submit" class="btn btn-danger w-100 mt-2">Cancel</button>
+            </form>
+        }
+    }
+</div>

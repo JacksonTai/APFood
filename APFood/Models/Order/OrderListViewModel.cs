@@ -10,7 +10,7 @@ namespace APFood.Models.Order
         public required DineInOption DineInOption { get; set; }
         public required decimal TotalPaid { get; set; }
         public required OrderStatus OrderStatus { get; set; }
-        public required bool CanShowReceivedButton { get; set; }
-        public required bool CanShowCancelButton { get; set; }
+        public required bool IsReceivableOrder { get; set; }
+        public required bool IsCancellableOrder { get; set; }
     }
 }

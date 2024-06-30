@@ -1,0 +1,129 @@
+﻿@using APFood.Constants
+@using APFood.Models.DeliveryTask
+@model DeliveryTaskViewModel
+@{
+    ViewData["Title"] = "Runner";
+    string IsActive(DeliveryStatus status) => Model.CurrentStatus == status ? "active" : "";
+    var statuses = Enum.GetValues(typeof(DeliveryStatus)).Cast<DeliveryStatus>();
+}
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="text-start fs-2">Delivery Task</h1>
+            @if (!Model.IsAdmin)
+            {
+                <div class="d-flex align-items-center">
+                    <i class="fa-regular fa-circle-question d-block me-2" data-toggle="tooltip" data-placement="left"
+                       title="The runner points can be earned by delivering food order and can be used to offset your
+                      payment amount when buying food"></i>
+                    <p class="mb-0">Total Runner Points Earned: <strong>@Model.TotalPointsEarned</strong></p>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="orderTabs" role="tablist">
+                @foreach (var status in statuses)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(IsActive(status))" href="/DeliveryTask?status=@(status)">
+                            @status <span class="badge bg-primary">@Model.DeliveryTaskCounts[status]</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                @if (Model.CurrentStatus == DeliveryStatus.Pending ||
+                Model.CurrentStatus == DeliveryStatus.Accepted)
+                {
+
+                    @if (!Model.IsAdmin)
+                    {
+                        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Warning:">
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+                            </svg>
+                            <strong>Note: </strong> You are only allowed to accept and deliver one delivery task at a time.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                }
+                @if (Model.DeliveryTaskList.Count == 0)
+                {
+                    <div class="tab-pane fade show active" id="emptyState" role="tabpanel">
+                        <p class="text-muted">No @Model.CurrentStatus delivery task found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="tab-pane fade show active" role="tabpanel">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Delivery Task ID</th>
+                                    <th>Delivery Location</th>
+                                    <th>Queue Number</th>
+                                    <th>Customer</th>
+                                    <th>Order ID</th>
+                                    <th>Order Status</th>
+                                    <th>Order Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var deliveryTask in Model.DeliveryTaskList)
+                                {
+                                    <tr>
+                                        <td>@deliveryTask.DeliveryTaskId</td>
+                                        <td>@deliveryTask.DeliveryLocation</td>
+                                        <td>@deliveryTask.QueueNumber</td>
+                                        <td>@deliveryTask.CustomerName</td>
+                                        <td>@deliveryTask.OrderId</td>
+                                        <td>@deliveryTask.OrderStatus</td>
+                                        <td>@deliveryTask.OrderTime.ToString("g")</td>
+                                        <td class="d-flex">
+                                            <a class="btn btn-sm btn-outline-primary me-2" href="/DeliveryTask/@deliveryTask.DeliveryTaskId">
+                                                View
+                                            </a>
+                                            @if (!Model.IsAdmin)
+                                            {
+                                                @if (deliveryTask.IsAcceptableDeliveryTask)
+                                                {
+                                                    <form method="post" asp-controller="DeliveryTask" asp-action="AcceptDeliveryTask">
+                                                        <input type="hidden" name="deliveryTaskId" value="@deliveryTask.DeliveryTaskId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-success me-2">Accept</button>
+                                                    </form>
+                                                }
+                                                @if (deliveryTask.IsDeliverableDeliveryTask)
+                                                {
+                                                    <form method="post" asp-controller="DeliveryTask" asp-action="DeliverDeliveryTask">
+                                                        <input type="hidden" name="deliveryTaskId" value="@deliveryTask.DeliveryTaskId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-success me-2">Delivered</button>
+                                                    </form>
+                                                }
+                                                @if (deliveryTask.IsCancellableDeliveryTask)
+                                                {
+                                                    <form method="post" asp-controller="DeliveryTask" asp-action="CancelDeliveryTask">
+                                                        <input type="hidden" name="deliveryTaskId" value="@deliveryTask.DeliveryTaskId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                                    </form>
+                                                }
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/shared/bootstrap.js"></script>
+}
