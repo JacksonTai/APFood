@@ -10,5 +10,6 @@
         public string DateTime { get; set; }
         public decimal Price { get; set; }
         public string Status { get; set; }
+        public APFood.Constants.Order.DineInOption DineInOption { get; set; }
     }
 }
