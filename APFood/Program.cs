@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using APFood.Data;
@@ -35,9 +36,14 @@ builder.Services.AddScoped<LoginRedirectionHandler>();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     // Default path
-    options.LoginPath = "/"; 
+    options.LoginPath = "/";
     options.EventsType = typeof(LoginRedirectionHandler);
 });
+
+// AWS configuration
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddTransient<S3Service>();
 
 var app = builder.Build();
 
