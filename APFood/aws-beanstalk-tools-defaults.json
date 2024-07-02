@@ -8,7 +8,7 @@
     "environment"    : "APFood-prod",
     "enable-xray"    : false,
     "enhanced-health-type" : "basic",
-    "additional-options"   : "\"aws:autoscaling:launchconfiguration,SecurityGroups\"=\"sg-07642b43179d2f14d,sg-09af328077a6bc8e5\";\"aws:ec2:vpc,Subnets\"=\"subnet-072d62de43e0df693\"",
+    "additional-options"   : "",
     "solution-stack"       : "64bit Amazon Linux 2 v2.7.3 running .NET Core",
     "environment-type"     : "SingleInstance",
     "cname"                : "apfood-prod",
