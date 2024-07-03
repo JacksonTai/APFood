@@ -3,6 +3,7 @@ using APFood.Constants;
 using APFood.Constants.Food;
 using APFood.Data;
 using APFood.Models.Customer;
+using APFood.Services;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -17,16 +18,19 @@ namespace APFood.Controllers
         private readonly APFoodContext _context;
         private readonly UserManager<APFoodUser> _userManager;
         private readonly IRunnerPointService _runnerPointService;
+        private readonly S3Service _s3Service;
 
         public CustomerController(
             APFoodContext context, 
             UserManager<APFoodUser> userManager,
-            IRunnerPointService runnerPointService
+            IRunnerPointService runnerPointService,
+            S3Service s3Service
             )
         {
             _context = context;
             _userManager = userManager;
             _runnerPointService = runnerPointService;
+            _s3Service = s3Service;
         }
 
         public async Task<IActionResult> Index(string vendorId = null)
@@ -44,6 +48,15 @@ namespace APFood.Controllers
                 ? await _context.Foods.Where(f => f.FoodVendorId == selectedVendorId && f.Status != FoodStatus.Deleted).ToListAsync()
                 : new List<Food>();
 
+            foreach (var food in foodItems)
+            {
+                if (!string.IsNullOrEmpty(food.ImageUrl))
+                {
+                    var fileName = Path.GetFileName(food.ImageUrl);
+                    food.ImageUrl = _s3Service.GeneratePreSignedURL(fileName, TimeSpan.FromMinutes(30));
+                }
+            }
+
             var cartItems = customer?.Cart?.Items.ToDictionary(i => i.FoodId, i => i.Quantity) ?? new Dictionary<int, int>();
 
             var model = new CustomerDashboardViewModel
@@ -57,6 +70,7 @@ namespace APFood.Controllers
 
             return View(model);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> CheckCart(int foodId)

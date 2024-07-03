@@ -27,7 +27,6 @@ namespace APFood.Controllers
                 {
                     Id = v.Id,
                     StoreName = v.StoreName,
-                    UserName = v.UserName,
                     Email = v.Email
                 }).ToListAsync();
 
@@ -83,7 +82,6 @@ namespace APFood.Controllers
             {
                 Id = vendor.Id,
                 StoreName = vendor.StoreName,
-                UserName = vendor.UserName,
                 Email = vendor.Email
             };
 
@@ -102,7 +100,6 @@ namespace APFood.Controllers
                 }
 
                 vendor.StoreName = model.StoreName;
-                vendor.UserName = model.UserName;
                 vendor.Email = model.Email;
 
                 _context.Update(vendor);

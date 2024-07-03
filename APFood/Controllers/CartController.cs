@@ -2,6 +2,7 @@
 using APFood.Constants.Order;
 using APFood.Data;
 using APFood.Models.Cart;
+using APFood.Services;
 using APFood.Services.Contract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,13 @@ namespace APFood.Controllers
     [Authorize(Roles = UserRole.Customer)]
     public class CartController(
         ICartService cartService,
-        ILogger<CartController> logger
+        ILogger<CartController> logger,
+        S3Service s3Service
         ) : Controller
     {
         private readonly ICartService _cartService = cartService;
         private readonly ILogger<CartController> _logger = logger;
+        private readonly S3Service _s3Service = s3Service;
 
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -25,6 +28,14 @@ namespace APFood.Controllers
             try
             {
                 Cart cart = await _cartService.GetCartAsync(userId) ?? throw new Exception("Cart not found");
+                foreach (var item in cart.Items)
+                {
+                    if (!string.IsNullOrEmpty(item.Food.ImageUrl))
+                    {
+                        var fileName = Path.GetFileName(item.Food.ImageUrl);
+                        item.Food.ImageUrl = _s3Service.GeneratePreSignedURL(fileName, TimeSpan.FromMinutes(30));
+                    }
+                }
                 CartViewModel cartView = await _cartService.GetCartViewAsync(cart);
                 return View(cartView);
             }

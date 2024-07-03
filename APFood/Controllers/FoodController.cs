@@ -1,17 +1,13 @@
 ﻿using APFood.Data;
-using APFood.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using APFood.Areas.Identity.Data;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System.Linq;
 using APFood.Constants.Food;
 using Microsoft.EntityFrameworkCore;
 using APFood.Constants.Order;
 using APFood.Constants;
 using Microsoft.AspNetCore.Authorization;
+using APFood.Services;
 
 namespace APFood.Controllers
 {
@@ -21,12 +17,14 @@ namespace APFood.Controllers
         private readonly APFoodContext _context;
         private readonly UserManager<APFoodUser> _userManager;
         private readonly ILogger<FoodController> _logger;
+        private readonly S3Service _s3Service;
 
-        public FoodController(APFoodContext context, UserManager<APFoodUser> userManager, ILogger<FoodController> logger)
+        public FoodController(APFoodContext context, UserManager<APFoodUser> userManager, ILogger<FoodController> logger, S3Service s3Service)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _s3Service = s3Service;
         }
 
         // GET: Food
@@ -42,6 +40,15 @@ namespace APFood.Controllers
             var foods = await _context.Foods
                 .Where(f => f.FoodVendorId == foodVendor.Id && f.Status != FoodStatus.Deleted)
                 .ToListAsync();
+
+            foreach (var food in foods)
+            {
+                if (!string.IsNullOrEmpty(food.ImageUrl))
+                {
+                    var fileName = Path.GetFileName(food.ImageUrl);
+                    food.ImageUrl = _s3Service.GeneratePreSignedURL(fileName, TimeSpan.FromMinutes(30));
+                }
+            }
 
             return View(foods);
         }
@@ -73,16 +80,10 @@ namespace APFood.Controllers
                 try
                 {
                     var fileName = Path.GetFileName(food.ImageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/foodImg", fileName);
-
-                    _logger.LogInformation("Saving file to {FilePath}", filePath);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    using (var stream = food.ImageFile.OpenReadStream())
                     {
-                        await food.ImageFile.CopyToAsync(stream);
+                        food.ImageUrl = await _s3Service.UploadFileAsync(stream, fileName);
                     }
-
-                    food.ImageUrl = "/foodImg/" + fileName;
                 }
                 catch (Exception ex)
                 {
@@ -132,6 +133,13 @@ namespace APFood.Controllers
             {
                 return NotFound();
             }
+
+            if (!string.IsNullOrEmpty(food.ImageUrl))
+            {
+                var fileName = Path.GetFileName(food.ImageUrl);
+                food.ImageUrl = _s3Service.GeneratePreSignedURL(fileName, TimeSpan.FromMinutes(30));
+            }
+
             return View(food);
         }
 
@@ -156,16 +164,10 @@ namespace APFood.Controllers
                 try
                 {
                     var fileName = Path.GetFileName(food.ImageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/foodImg", fileName);
-
-                    _logger.LogInformation("Saving file to {FilePath}", filePath);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    using (var stream = food.ImageFile.OpenReadStream())
                     {
-                        await food.ImageFile.CopyToAsync(stream);
+                        existingFood.ImageUrl = await _s3Service.UploadFileAsync(stream, fileName);
                     }
-
-                    existingFood.ImageUrl = "/foodImg/" + fileName;
                 }
                 catch (Exception ex)
                 {
@@ -208,6 +210,13 @@ namespace APFood.Controllers
             {
                 return NotFound();
             }
+
+            if (!string.IsNullOrEmpty(food.ImageUrl))
+            {
+                var fileName = Path.GetFileName(food.ImageUrl);
+                food.ImageUrl = _s3Service.GeneratePreSignedURL(fileName, TimeSpan.FromMinutes(30));
+            }
+
             return View(food);
         }
 
