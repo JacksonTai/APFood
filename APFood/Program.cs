@@ -37,7 +37,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>()
     .AddHttpClient<IOrderService, OrderService>(client =>
     {
-        client.BaseAddress = new Uri("https://bb1y3r8w49.execute-api.us-east-1.amazonaws.com/dev/");
+        client.BaseAddress = new Uri("https://g68t4gya31.execute-api.us-east-1.amazonaws.com/dev/");
     });
 
 builder.Services.AddScoped<IDeliveryTaskService, DeliveryTaskService>();
