@@ -11,8 +11,9 @@ namespace APFood.Services.Contract
         Task<CartViewModel> CheckoutCart(Cart cart, CartFormModel cartForm);
         Task<CartViewModel> GetCartViewAsync(Cart cart, CartFormModel cartForm);
         Task<CartViewModel> GetCartViewAsync(Cart cart);
-        Task<Cart?> GetCartAsync(string userId);
-        Task<List<CartItem>> GetCartItemsAsync(string userId);
+        Task<Cart?> GetCartAsyncWithTracking(string userId);
+        Task<Cart?> GetCartAsyncNoTracking(string userId);
+         Task<List<CartItem>> GetCartItemsAsync(string userId);
         Task AddItemAsync(string userId, Food food, int quantity);
         Task<UpdateQuantityResponseModel> UpdateQuantityAsync(Cart cart, UpdateQuantityRequestModel updateQuantityRequest);
         UpdateRunnerPointsResponseModel UpdateRunnerPoints(Cart cart, bool isUsingRunnerPoints);

@@ -1,0 +1,21 @@
+
+{
+    "region" : "us-east-1",
+    "profile" : "default",
+    "configuration" : "Release",
+    "framework"     : "net8.0",
+    "function-name" : "LambdaFunctionDemo",
+    "function-description" : "",
+    "package-type"         : "Zip",
+    "function-handler"     : "LambdaFunctionDemo",
+    "function-memory-size" : 512,
+    "function-role"        : "arn:aws:iam::902698213714:role/LabRole",
+    "function-timeout"     : 15,
+    "function-runtime"     : "dotnet8",
+    "function-architecture" : "x86_64",
+    "function-subnets"      : "",
+    "function-security-groups" : "",
+    "tracing-mode"             : "PassThrough",
+    "environment-variables"    : "",
+    "image-tag"                : ""
+}

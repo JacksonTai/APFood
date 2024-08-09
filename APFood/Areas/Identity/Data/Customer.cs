@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace APFood.Areas.Identity.Data
 {
@@ -12,6 +13,8 @@ namespace APFood.Areas.Identity.Data
 
         [ForeignKey("Cart")]
         public int? CartId { get; set; }
+ 
+        [JsonIgnore]
         public Cart? Cart { get; set; }
 
         [DefaultValue(0.0)]

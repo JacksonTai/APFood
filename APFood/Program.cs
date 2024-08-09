@@ -5,14 +5,19 @@ using APFood.Data;
 using APFood.Areas.Identity.Data;
 using APFood.Services;
 using APFood.Services.Auth;
+using APFood.Services.Contract;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("APFoodContextConnection") ?? throw new InvalidOperationException("Connection string 'APFoodContextConnection' not found.");
 
-builder.Services.AddDbContext<APFoodContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<APFoodContext>(options => {
+    options.UseSqlServer(connectionString).EnableSensitiveDataLogging();
+});
 builder.Services.AddDefaultIdentity<APFoodUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<APFoodContext>();
+
+builder.Services.AddScoped<DbContext, APFoodContext>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -24,13 +29,18 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddScoped<APFood.Services.Contract.IRegisterService, RegisterService>();
-builder.Services.AddScoped<APFood.Services.Contract.ILoginService, LoginService>();
-builder.Services.AddScoped<APFood.Services.Contract.IRunnerPointService, RunnerPointService>();
-builder.Services.AddScoped<APFood.Services.Contract.ICartService, CartService>();
-builder.Services.AddScoped<APFood.Services.Contract.IPaymentService, PaymentService>();
-builder.Services.AddScoped<APFood.Services.Contract.IOrderService, OrderService>();
-builder.Services.AddScoped<APFood.Services.Contract.IDeliveryTaskService, DeliveryTaskService>();
+builder.Services.AddScoped<IRegisterService, RegisterService>();
+builder.Services.AddScoped<ILoginService, LoginService>();
+builder.Services.AddScoped<IRunnerPointService, RunnerPointService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IOrderService, OrderService>()
+    .AddHttpClient<IOrderService, OrderService>(client =>
+    {
+        client.BaseAddress = new Uri("https://bb1y3r8w49.execute-api.us-east-1.amazonaws.com/dev/");
+    });
+
+builder.Services.AddScoped<IDeliveryTaskService, DeliveryTaskService>();
 builder.Services.AddScoped<SessionManager>();
 builder.Services.AddScoped<LoginRedirectionHandler>();
 builder.Services.ConfigureApplicationCookie(options =>
@@ -44,6 +54,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddTransient<S3Service>();
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 var app = builder.Build();
 

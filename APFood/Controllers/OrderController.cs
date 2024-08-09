@@ -36,17 +36,9 @@ namespace APFood.Controllers
             {
                 List<OrderListViewModel> orders;
                 Dictionary<OrderStatus, int> orderCounts;
-                if (isAdmin)
-                {
-                    orders = await _orderService.GetOrdersByStatusAdminAsync(status);
-                    orderCounts = await _orderService.GetOrderCountsAdminAsync();
-                }
-                else
-                {
-                    orders = await _orderService.GetOrdersByStatusAsync(status, userId);
-                    orderCounts = await _orderService.GetOrderCountsAsync(userId);
-                }
-
+                string? customerId = isAdmin ? null : userId;
+                orders = await _orderService.GetOrdersByStatusAsync(status, customerId);
+                orderCounts = await _orderService.GetOrderCountsAsync(customerId);
                 return View(new OrderViewModel
                 {
                     OrderList = orders,
@@ -66,19 +58,10 @@ namespace APFood.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Detail(int id)
         {
-            bool isAdmin = User.IsInRole(UserRole.Admin);
             try
             {
-                if (isAdmin)
-                {
-                    OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAdminAsync(id);
-                    return orderDetail == null ? NotFound() : View(orderDetail);
-                }
-                else
-                {
-                    OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id, GetUserId());
-                    return orderDetail == null ? NotFound() : View(orderDetail);
-                }
+                OrderDetailViewModel? orderDetail = await _orderService.GetOrderDetailAsync(id);
+                return orderDetail == null ? NotFound() : View(orderDetail);
             }
             catch (Exception ex)
             {

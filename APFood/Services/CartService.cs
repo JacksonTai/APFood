@@ -86,6 +86,26 @@ namespace APFood.Services
                 .Include(c => c.Customer)
                 .Include(c => c.Items)
                     .ThenInclude(ci => ci.Food)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CustomerId == userId);
+        }
+
+        public async Task<Cart?> GetCartAsyncWithTracking(string userId)
+        {
+            return await _context.Carts
+                .Include(c => c.Customer)
+                .Include(c => c.Items)
+                    .ThenInclude(ci => ci.Food)
+                .FirstOrDefaultAsync(c => c.CustomerId == userId);
+        }
+
+        public async Task<Cart?> GetCartAsyncNoTracking(string userId)
+        {
+            return await _context.Carts
+                .Include(c => c.Customer)
+                .Include(c => c.Items)
+                    .ThenInclude(ci => ci.Food)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CustomerId == userId);
         }
 
